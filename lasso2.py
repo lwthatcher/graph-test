@@ -51,6 +51,8 @@ def select_callback(side='left'):
         array = updateArray(array, ind, val)
         msk.set_data(array)
         fig.canvas.draw_idle()
+
+
         # draw the line again, just for fun!
         # line = Line2D(v0[:,0], v0[:,1], **lpl)
         # ax2.add_line(line)
@@ -65,4 +67,6 @@ lasso_left = LassoSelector(ax, select_callback('left'), lineprops=lpl, button=[1
 lasso_right = LassoSelector(ax, select_callback('right'), lineprops=lpr, button=[3])
 
 plt.show()
+
+print(array)
 
