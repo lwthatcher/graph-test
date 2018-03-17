@@ -1,6 +1,7 @@
 from PIL import Image
 from matplotlib.widgets import LassoSelector
-from matplotlib.lines import Line2D
+from skimage import segmentation, color
+from skimage.future import graph
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import path
@@ -9,13 +10,13 @@ from matplotlib import path
 img = np.asarray(Image.open("img/gymnastics.jpg"))
 
 
-fig = plt.figure()
+fig = plt.figure(figsize=(24, 16))
 ax = fig.add_subplot(121)
 ax.imshow(img)
 
 ax2 = fig.add_subplot(122)
 array = np.zeros(img.shape[:-1])
-msk = ax2.imshow(array, origin='upper', vmin=-10, vmax=10, interpolation='nearest')
+msk = ax2.imshow(array, origin='upper', vmax=10, interpolation='nearest')
 print("Image shape", img.shape, array.shape)
 
 xv, yv = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
@@ -30,13 +31,13 @@ def updateArray(array, indices, val):
     lin = np.arange(array.size)
     newArray = array.flatten()
     newArray[lin[indices]] = val
-    return newArray.reshape(array.shape)
+    return newArray.reshape(array.shape).astype(int)
 
 
 def select_callback(side='left'):
     val = 10
     if side == 'right':
-        val = -10
+        val = 0
 
     def onselect(verts):
         p = path.Path(verts)
@@ -68,5 +69,17 @@ lasso_right = LassoSelector(ax, select_callback('right'), lineprops=lpr, button=
 
 plt.show()
 
-print(array)
+print('PREDICTING RESULTS', img.shape, array.shape)
+labels1 = segmentation.slic(img, compactness=30, n_segments=400)
+out1 = color.label2rgb(labels1, img, kind='avg')
+g = graph.rag_mean_color(img, labels1, mode='similarity')
+labels2 = graph.cut_normalized(labels1, g)
+out2 = color.label2rgb(labels2, img, kind='avg')
+print('DISPLAYING RESULTS', out2)
 
+fig = plt.figure()
+ax = fig.add_subplot(121)
+ax.imshow(img)
+ax2 = fig.add_subplot(122)
+ax2.imshow(out2, interpolation='nearest')
+plt.show()
