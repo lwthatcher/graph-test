@@ -5,6 +5,7 @@ from skimage.future import graph
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import path
+# import pysegbase.pycut as pspc
 
 
 img = np.asarray(Image.open("img/gymnastics.jpg"))
@@ -75,6 +76,8 @@ out1 = color.label2rgb(labels1, img, kind='avg')
 g = graph.rag_mean_color(img, labels1, mode='similarity')
 labels2 = graph.cut_normalized(labels1, g)
 out2 = color.label2rgb(labels2, img, kind='avg')
+
+
 print('DISPLAYING RESULTS', np.max(labels1), np.mean(labels1))
 
 fig = plt.figure()
@@ -85,3 +88,15 @@ ax2.imshow(out1, interpolation='nearest')
 ax3 = fig.add_subplot(223)
 ax3.imshow(out2, interpolation='nearest')
 plt.show()
+
+# print('PREDICTING RESULTS')
+# igc = pspc.ImageGraphCut(img, voxelsize=[1,1,1])
+# seeds = np.stack((array, array, array), axis=-1)
+# print(img.shape, seeds.shape)
+# igc.set_seeds(seeds)
+# igc.run()
+#
+# print('DISPLAYING RESULTS')
+# plt.imshow(img)
+# plt.contour(igc.segmentation, levels=[0.5])
+# plt.show()
