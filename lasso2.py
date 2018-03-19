@@ -16,7 +16,7 @@ ax.imshow(img)
 
 ax2 = fig.add_subplot(122)
 array = np.zeros(img.shape[:-1])
-msk = ax2.imshow(array, origin='upper', vmax=10, interpolation='nearest')
+msk = ax2.imshow(array, origin='upper', vmax=2, interpolation='nearest')
 print("Image shape", img.shape, array.shape)
 
 xv, yv = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
@@ -35,9 +35,9 @@ def updateArray(array, indices, val):
 
 
 def select_callback(side='left'):
-    val = 10
+    val = 1
     if side == 'right':
-        val = 0
+        val = 2
 
     def onselect(verts):
         p = path.Path(verts)
@@ -70,16 +70,18 @@ lasso_right = LassoSelector(ax, select_callback('right'), lineprops=lpr, button=
 plt.show()
 
 print('PREDICTING RESULTS', img.shape, array.shape)
-labels1 = segmentation.slic(img, compactness=30, n_segments=400)
+labels1 = segmentation.slic(img, compactness=30, n_segments=200)
 out1 = color.label2rgb(labels1, img, kind='avg')
 g = graph.rag_mean_color(img, labels1, mode='similarity')
 labels2 = graph.cut_normalized(labels1, g)
 out2 = color.label2rgb(labels2, img, kind='avg')
-print('DISPLAYING RESULTS', out2)
+print('DISPLAYING RESULTS', np.max(labels1), np.mean(labels1))
 
 fig = plt.figure()
-ax = fig.add_subplot(121)
+ax = fig.add_subplot(221)
 ax.imshow(img)
-ax2 = fig.add_subplot(122)
-ax2.imshow(out2, interpolation='nearest')
+ax2 = fig.add_subplot(222)
+ax2.imshow(out1, interpolation='nearest')
+ax3 = fig.add_subplot(223)
+ax3.imshow(out2, interpolation='nearest')
 plt.show()
