@@ -5,7 +5,7 @@ from skimage.future import graph
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import path
-# import pysegbase.pycut as pspc
+from matplotlib.patches import Polygon
 
 
 img = np.asarray(Image.open("img/gymnastics.jpg"))
@@ -70,33 +70,21 @@ lasso_right = LassoSelector(ax, select_callback('right'), lineprops=lpr, button=
 
 plt.show()
 
-print('PREDICTING RESULTS', img.shape, array.shape)
-labels1 = segmentation.slic(img, compactness=30, n_segments=200)
-out1 = color.label2rgb(labels1, img, kind='avg')
-g = graph.rag_mean_color(img, labels1, mode='similarity')
-labels2 = graph.cut_normalized(labels1, g)
-out2 = color.label2rgb(labels2, img, kind='avg')
-
-
-print('DISPLAYING RESULTS', np.max(labels1), np.mean(labels1))
-
-fig = plt.figure()
-ax = fig.add_subplot(221)
-ax.imshow(img)
-ax2 = fig.add_subplot(222)
-ax2.imshow(out1, interpolation='nearest')
-ax3 = fig.add_subplot(223)
-ax3.imshow(out2, interpolation='nearest')
-plt.show()
-
-# print('PREDICTING RESULTS')
-# igc = pspc.ImageGraphCut(img, voxelsize=[1,1,1])
-# seeds = np.stack((array, array, array), axis=-1)
-# print(img.shape, seeds.shape)
-# igc.set_seeds(seeds)
-# igc.run()
+# print('PREDICTING RESULTS', img.shape, array.shape)
+# labels1 = segmentation.slic(img, compactness=30, n_segments=200)
+# out1 = color.label2rgb(labels1, img, kind='avg')
+# g = graph.rag_mean_color(img, labels1, mode='similarity')
+# labels2 = graph.cut_normalized(labels1, g)
+# out2 = color.label2rgb(labels2, img, kind='avg')
 #
-# print('DISPLAYING RESULTS')
-# plt.imshow(img)
-# plt.contour(igc.segmentation, levels=[0.5])
+#
+# print('DISPLAYING RESULTS', np.max(labels1), np.mean(labels1))
+#
+# fig = plt.figure()
+# ax = fig.add_subplot(221)
+# ax.imshow(img)
+# ax2 = fig.add_subplot(222)
+# ax2.imshow(out1, interpolation='nearest')
+# ax3 = fig.add_subplot(223)
+# ax3.imshow(out2, interpolation='nearest')
 # plt.show()
