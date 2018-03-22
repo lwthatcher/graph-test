@@ -10,6 +10,7 @@ from PIL import Image
 from matplotlib import path
 from matplotlib.widgets import LassoSelector
 
+
 # region Graph-Cut Segmentation
 # Calculate the SLIC superpixels, their histograms and neighbors
 def superpixels_histograms_neighbors(img):
@@ -128,9 +129,9 @@ class DrawingInterface:
         self.ax.imshow(img)
         # setup annotations sub-figure
         self.ax2 = self.fig.add_subplot(122)
-        self.array = np.zeros(img.shape)
-        self.msk = self.ax2.imshow(self.array, origin='upper', interpolation='nearest')
-        print("Image shape", img.shape, self.array.shape)
+        self.seeds = np.zeros(img.shape)
+        self.msk = self.ax2.imshow(self.seeds, origin='upper', interpolation='nearest')
+        print("Image shape", img.shape, self.seeds.shape)
         # get pixel indices
         xv, yv = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
         self.idx = np.vstack((xv.flatten(), yv.flatten())).T
@@ -139,13 +140,13 @@ class DrawingInterface:
         self.lpr = dict(color='black', linestyle='-', linewidth=5, alpha=0.5)
 
     def _update_array(self, indices, val):
-        R = self.array[:,:,val]
+        R = self.seeds[:, :, val]
         lin = np.arange(R.size)
         result = R.flatten()
         result[lin[indices]] = 255
         msk = result.reshape(R.shape).astype(int)
-        self.array[:,:,val] = msk
-        return self.array
+        self.seeds[:, :, val] = msk
+        return self.seeds
 
     def _callback(self, side='left'):
         val = 2
@@ -155,12 +156,8 @@ class DrawingInterface:
         def onselect(verts):
             p = path.Path(verts)
             ind = p.contains_points(self.idx, radius=5)
-            v0 = np.array(verts)
-            v1 = np.round(verts)
-            v2 = np.unique(v1, axis=0)
             print('side:', side)
             # selections
-            print(v0.shape, v1.shape, v2.shape, self.idx[ind].shape)
             array = self._update_array(ind, val)
             self.msk.set_data(array)
             self.fig.canvas.draw_idle()
@@ -170,7 +167,7 @@ class DrawingInterface:
         self.lasso_left = LassoSelector(self.ax, self._callback('left'), lineprops=self.lpl, button=[1])
         self.lasso_right = LassoSelector(self.ax, self._callback('right'), lineprops=self.lpr, button=[3])
         plt.show()
-        print('annotations complete!')
+        return self.seeds
 # endregion
 
 
@@ -181,5 +178,5 @@ if __name__ == '__main__':
     print('SOURCE IMAGE:', args.image)
     img = np.asarray(Image.open(args.image))
     seed_drawer = DrawingInterface(img)
-    seed_drawer.run()
-    print('yay!')
+    seeds = seed_drawer.run()
+    print('collected seeds:', np.count_nonzero(seeds[:,:,0]), np.count_nonzero(seeds[:,:,2]))
