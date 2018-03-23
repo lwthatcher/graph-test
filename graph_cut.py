@@ -133,7 +133,7 @@ class DrawingInterface:
         self.ax.imshow(img)
         # setup annotations sub-figure
         self.ax2 = self.fig.add_subplot(122)
-        self.seeds = np.zeros(img.shape)
+        self.seeds = np.ones(img.shape).astype(int) * 255  # white background
         self.msk = self.ax2.imshow(self.seeds, origin='upper', interpolation='nearest')
         print("Image shape", img.shape, self.seeds.shape)
         # get pixel indices
@@ -142,34 +142,30 @@ class DrawingInterface:
         # setup line formats
         self.lpl = dict(color='blue', linestyle='-', linewidth=5, alpha=0.5)
         self.lpr = dict(color='black', linestyle='-', linewidth=5, alpha=0.5)
+        # RGB channels
+        self.c = np.arange(3)
 
-    def _update_array(self, indices, val):
-        R = self.seeds[:, :, val]
-        lin = np.arange(R.size)
-        result = R.flatten()
-        result[lin[indices]] = 255
-        msk = result.reshape(R.shape).astype(int)
-        self.seeds[:, :, val] = msk
+    def _update_array(self, ind, dim):
+        """draws the red or blue seeds on a white background"""
+        a,b = ind.T
+        xi = self.c[self.c != dim]
+        we = np.meshgrid(a,xi)[1]
+        self.seeds[b, a, we] = 0
         return self.seeds
 
-    def _callback(self, side='left'):
-        val = 2
-        if side == 'right':
-            val = 0
-
+    def _callback(self, dim):
         def onselect(verts):
             p = path.Path(verts)
             ind = p.contains_points(self.idx, radius=5)
-            print('side:', side)
             # selections
-            array = self._update_array(ind, val)
+            array = self._update_array(self.idx[ind], dim)
             self.msk.set_data(array)
             self.fig.canvas.draw_idle()
         return onselect
 
     def run(self):
-        self.lasso_left = LassoSelector(self.ax, self._callback('left'), lineprops=self.lpl, button=[1])
-        self.lasso_right = LassoSelector(self.ax, self._callback('right'), lineprops=self.lpr, button=[3])
+        self.lasso_left = LassoSelector(self.ax, self._callback(2), lineprops=self.lpl, button=[1])
+        self.lasso_right = LassoSelector(self.ax, self._callback(0), lineprops=self.lpr, button=[3])
         plt.show()
         return self.seeds
 # endregion
@@ -191,6 +187,7 @@ if __name__ == '__main__':
     # user-defined seeds
     seed_drawer = DrawingInterface(img)
     seeds = seed_drawer.run()
+    # TODO: fix seed counts
     print('collected seeds:', np.count_nonzero(seeds[:,:,0]), np.count_nonzero(seeds[:,:,2]))
     # specify output files
     _name = args.image.split('.')[0]
