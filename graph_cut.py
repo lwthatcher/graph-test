@@ -1,4 +1,5 @@
 import cv2
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage.segmentation import slic
@@ -89,34 +90,37 @@ def do_graph_cut(fgbg_hists, fgbg_superpixels, norm_hists, neighbors):
     return g.get_grid_segments(nodes)
 
 
-def segment(img, img_marking):
+def segment(img, img_marking, outfile, fig_file=None, show_figure=True):
     centers, colors_hists, segments, neighbors = superpixels_histograms_neighbors(img)
     fg_segments, bg_segments = find_superpixels_under_marking(img_marking, segments)
-
     # get cumulative BG/FG histograms, before normalization
     fg_cumulative_hist = cumulative_histogram_for_superpixels(fg_segments, colors_hists)
     bg_cumulative_hist = cumulative_histogram_for_superpixels(bg_segments, colors_hists)
-
+    # get histograms
     norm_hists = normalize_histograms(colors_hists)
-
+    # perform graph-cut
     graph_cut = do_graph_cut((fg_cumulative_hist, bg_cumulative_hist),
                              (fg_segments, bg_segments),
                              norm_hists,
                              neighbors)
-
+    # segmentation plot
     plt.subplot(1, 2, 2), plt.xticks([]), plt.yticks([])
     plt.title('segmentation')
     segmask = pixels_for_segment_selection(segments, np.nonzero(graph_cut))
-    cv2.imwrite("img/output_segmentation.png", np.uint8(segmask * 255))
+    cv2.imwrite(outfile, np.uint8(segmask * 255))
     plt.imshow(segmask)
-
+    # SLIC + markings plot
     plt.subplot(1, 2, 1), plt.xticks([]), plt.yticks([])
     img = mark_boundaries(img, segments)
     img[img_marking[:, :, 0] != 255] = (1, 0, 0)
     img[img_marking[:, :, 2] != 255] = (0, 0, 1)
     plt.imshow(img)
     plt.title("SLIC + markings")
-    plt.savefig("img/segmentation.png", bbox_inches='tight', dpi=96)
+    # display result
+    if fig_file:
+        plt.savefig(fig_file, bbox_inches='tight', dpi=96)
+    if show_figure:
+        plt.show()
 # endregion
 
 
@@ -173,10 +177,24 @@ class DrawingInterface:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('image', nargs='?', default='img/gymnastics.jpg', help='the image to segment')
+    parser.add_argument('image', nargs='?', default='gymnastics.jpg', help='the image to segment')
+    parser.add_argument('-f', dest='folder', nargs='*', default=['img'], help='list to the image folder path')
+    parser.add_argument('--save-figure', default=None,
+                        help='if specified the slic + segmentation figure will be saved to this path')
     args = parser.parse_args()
-    print('SOURCE IMAGE:', args.image)
-    img = np.asarray(Image.open(args.image))
+    # specify source image path
+    _path = args.folder or []
+    image_path = os.path.join(*_path, args.image)
+    print('SOURCE IMAGE:', image_path)
+    # load image
+    img = np.asarray(Image.open(image_path))
+    # user-defined seeds
     seed_drawer = DrawingInterface(img)
     seeds = seed_drawer.run()
     print('collected seeds:', np.count_nonzero(seeds[:,:,0]), np.count_nonzero(seeds[:,:,2]))
+    # specify output files
+    _name = args.image.split('.')[0]
+    _outfile = os.path.join(*_path, _name + '_segmentation.png')
+    # start the graph-cut segmentation
+    segment(img, seeds, _outfile, fig_file=args.save_figure)
+    print('segmentation complete')
