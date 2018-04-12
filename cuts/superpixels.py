@@ -19,6 +19,7 @@ class SuperPixelCut:
         # SLIC params
         self.n_segments = kwargs.get('n_segments', 500)
         self.compactness = kwargs.get('compactness', 20)
+        self.epn = kwargs.get('edges_per_node', 5)
 
     def segment(self):
         img = self.img
@@ -97,7 +98,7 @@ class SuperPixelCut:
     def _do_graph_cut(self, fgbg_hists, fgbg_superpixels, norm_hists, neighbors):
         num_nodes = norm_hists.shape[0]
         # Create a graph of N nodes, and estimate of 5 edges per node
-        g = maxflow.Graph[float](num_nodes, num_nodes * 5)
+        g = maxflow.Graph[float](num_nodes, num_nodes * self.epn)
         # Add N nodes
         nodes = g.add_nodes(num_nodes)
         hist_comp_alg = cv2.HISTCMP_KL_DIV

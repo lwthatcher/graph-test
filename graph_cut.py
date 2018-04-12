@@ -62,6 +62,8 @@ if __name__ == '__main__':
     parser.add_argument('--save-figure', default=None, help='if specified the result figure will be saved to this path')
     parser.add_argument('--segments', '-s', default=500, type=int, dest='n_segments',
                         help='number of segments used in SLIC')
+    parser.add_argument('--edges_per_node', '-epn', default=5, type=int,
+                        help='average edges per superpixel node estimation')
     parser.add_argument('--compactness', '-c', default=20, type=int, help='the compactness param used in SLIC')
     args = parser.parse_args()
     # specify source image path
