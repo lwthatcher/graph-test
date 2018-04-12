@@ -17,15 +17,19 @@ class GraphCut:
 
     def __init__(self, img, seeds, outfile, **kwargs):
         self.img = img
-        self.img_marking = seeds
+        self.seeds = seeds
+        # output files
         self.outfile = outfile
         self.fig_file = kwargs.get('fig_file', None)
         self.show_figure = kwargs.get('show_figure', True)
+        # SLIC params
+        self.n_segments = kwargs.get('n_segments', 500)
+        self.compactness = kwargs.get('compactness', 20)
 
     def segment(self):
         img = self.img
-        centers, colors_hists, segments, neighbors = self.superpixels_histograms_neighbors(img)
-        fg_segments, bg_segments = self.find_superpixels_under_marking(self.img_marking, segments)
+        centers, colors_hists, segments, neighbors = self.superpixels_histograms_neighbors()
+        fg_segments, bg_segments = self.find_superpixels_under_marking(self.seeds, segments)
         # get cumulative BG/FG histograms, before normalization
         fg_cumulative_hist = self.cumulative_histogram_for_superpixels(fg_segments, colors_hists)
         bg_cumulative_hist = self.cumulative_histogram_for_superpixels(bg_segments, colors_hists)
@@ -45,8 +49,8 @@ class GraphCut:
         # SLIC + markings plot
         plt.subplot(1, 2, 1), plt.xticks([]), plt.yticks([])
         img = mark_boundaries(img, segments)
-        img[self.img_marking[:, :, 0] != 255] = (1, 0, 0)
-        img[self.img_marking[:, :, 2] != 255] = (0, 0, 1)
+        img[self.seeds[:, :, 0] != 255] = (1, 0, 0)
+        img[self.seeds[:, :, 2] != 255] = (0, 0, 1)
         plt.imshow(img)
         plt.title("SLIC + markings")
         # display result
@@ -56,16 +60,16 @@ class GraphCut:
             plt.show()
 
     # Calculate the SLIC superpixels, their histograms and neighbors
-    def superpixels_histograms_neighbors(self, img):
+    def superpixels_histograms_neighbors(self):
         # SLIC
-        segs = slic(img, n_segments=500, compactness=20)
+        segs = slic(self.img, n_segments=self.n_segments, compactness=self.compactness)
         seg_ids = np.unique(segs)
 
         # centers
-        centers = np.array([np.mean(np.nonzero(segs==i),axis=1) for i in seg_ids])
+        centers = np.array([np.mean(np.nonzero(segs == i), axis=1) for i in seg_ids])
 
         # H-S histograms for all superpixels
-        hsv = cv2.cvtColor(img.astype('float32'), cv2.COLOR_BGR2HSV)
+        hsv = cv2.cvtColor(self.img.astype('float32'), cv2.COLOR_BGR2HSV)
         bins = [20, 20] # H = S = 20
         ranges = [0, 360, 0, 1] # H: [0, 360], S: [0, 1]
         colors_hists = np.float32([cv2.calcHist([hsv],[0, 1], np.uint8(segs==i), bins, ranges).flatten() for i in seg_ids])
@@ -179,8 +183,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('image', nargs='?', default='gymnastics.jpg', help='the image to segment')
     parser.add_argument('-f', dest='folder', nargs='*', default=['img'], help='list to the image folder path')
-    parser.add_argument('--save-figure', default=None,
-                        help='if specified the slic + segmentation figure will be saved to this path')
+    parser.add_argument('--save-figure', default=None, help='if specified the result figure will be saved to this path')
+    parser.add_argument('--segments', '-s', default=500, type=int, dest='n_segments',
+                        help='number of segments used in SLIC')
+    parser.add_argument('--compactness', '-c', default=20, type=int, help='the compactness param used in SLIC')
     args = parser.parse_args()
     # specify source image path
     _path = args.folder or []
@@ -197,6 +203,7 @@ if __name__ == '__main__':
     _name = args.image.split('.')[0]
     _outfile = os.path.join(*_path, _name + '_segmentation.png')
     # start the graph-cut segmentation
-    gc = GraphCut(img, seeds, _outfile, fig_file=args.save_figure)
+    d_args = vars(args)
+    gc = GraphCut(img, seeds, _outfile, **d_args)
     gc.segment()
     print('segmentation complete')
