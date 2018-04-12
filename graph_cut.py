@@ -5,7 +5,7 @@ import argparse
 from PIL import Image
 from matplotlib import path
 from matplotlib.widgets import LassoSelector
-from cuts.superpixels import GraphCut
+from cuts.superpixels import SuperPixelCut
 
 
 # region Interactive Seed Drawing
@@ -80,6 +80,6 @@ if __name__ == '__main__':
     _outfile = os.path.join(*_path, _name + '_segmentation.png')
     # start the graph-cut segmentation
     d_args = vars(args)
-    gc = GraphCut(img, seeds, _outfile, **d_args)
+    gc = SuperPixelCut(img, seeds, _outfile, **d_args)
     gc.segment()
     print('segmentation complete')

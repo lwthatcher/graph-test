@@ -7,7 +7,7 @@ from skimage.segmentation import mark_boundaries
 from scipy.spatial import Delaunay
 
 
-class GraphCut:
+class SuperPixelCut:
 
     def __init__(self, img, seeds, outfile, **kwargs):
         self.img = img
@@ -22,22 +22,22 @@ class GraphCut:
 
     def segment(self):
         img = self.img
-        centers, colors_hists, segments, neighbors = self.superpixels_histograms_neighbors()
-        fg_segments, bg_segments = self.find_superpixels_under_marking(self.seeds, segments)
+        centers, colors_hists, segments, neighbors = self._superpixels_histograms_neighbors()
+        fg_segments, bg_segments = self._find_superpixels_under_marking(self.seeds, segments)
         # get cumulative BG/FG histograms, before normalization
-        fg_cumulative_hist = self.cumulative_histogram_for_superpixels(fg_segments, colors_hists)
-        bg_cumulative_hist = self.cumulative_histogram_for_superpixels(bg_segments, colors_hists)
+        fg_cumulative_hist = self._cumulative_histogram_for_superpixels(fg_segments, colors_hists)
+        bg_cumulative_hist = self._cumulative_histogram_for_superpixels(bg_segments, colors_hists)
         # get histograms
-        norm_hists = self.normalize_histograms(colors_hists)
+        norm_hists = self._normalize_histograms(colors_hists)
         # perform graph-cut
-        graph_cut = self.do_graph_cut((fg_cumulative_hist, bg_cumulative_hist),
-                                 (fg_segments, bg_segments),
-                                 norm_hists,
-                                 neighbors)
+        graph_cut = self._do_graph_cut((fg_cumulative_hist, bg_cumulative_hist),
+                                       (fg_segments, bg_segments),
+                                       norm_hists,
+                                       neighbors)
         # segmentation plot
         plt.subplot(1, 2, 2), plt.xticks([]), plt.yticks([])
         plt.title('segmentation')
-        segmask = self.pixels_for_segment_selection(segments, np.nonzero(graph_cut))
+        segmask = self._pixels_for_segment_selection(segments, np.nonzero(graph_cut))
         cv2.imwrite(self.outfile, np.uint8(segmask * 255))
         plt.imshow(segmask)
         # SLIC + markings plot
@@ -54,7 +54,7 @@ class GraphCut:
             plt.show()
 
     # Calculate the SLIC superpixels, their histograms and neighbors
-    def superpixels_histograms_neighbors(self):
+    def _superpixels_histograms_neighbors(self):
         # SLIC
         segs = slic(self.img, n_segments=self.n_segments, compactness=self.compactness)
         seg_ids = np.unique(segs)
@@ -64,35 +64,37 @@ class GraphCut:
 
         # H-S histograms for all superpixels
         hsv = cv2.cvtColor(self.img.astype('float32'), cv2.COLOR_BGR2HSV)
-        bins = [20, 20] # H = S = 20
-        ranges = [0, 360, 0, 1] # H: [0, 360], S: [0, 1]
-        colors_hists = np.float32([cv2.calcHist([hsv],[0, 1], np.uint8(segs==i), bins, ranges).flatten() for i in seg_ids])
+        bins = [20, 20]  # H = S = 20
+        ranges = [0, 360, 0, 1]  # H: [0, 360], S: [0, 1]
+        colors_hists = np.float32(
+            [cv2.calcHist([hsv], [0, 1], np.uint8(segs == i), bins, ranges).flatten() for i in seg_ids])
         # neighbors via Delaunay tesselation
         tri = Delaunay(centers)
         return centers, colors_hists, segs, tri.vertex_neighbor_vertices
 
     # Get superpixels IDs for FG and BG from marking
-    def find_superpixels_under_marking(self, marking, superpixels):
-        fg_segments = np.unique(superpixels[marking[:,:,0]!=255])
-        bg_segments = np.unique(superpixels[marking[:,:,2]!=255])
+    @staticmethod
+    def _find_superpixels_under_marking(marking, superpixels):
+        fg_segments = np.unique(superpixels[marking[:, :, 0] != 255])
+        bg_segments = np.unique(superpixels[marking[:, :, 2] != 255])
         return fg_segments, bg_segments
 
     # Sum up the histograms for a given selection of superpixel IDs, normalize
-    def cumulative_histogram_for_superpixels(self, ids, histograms):
-        h = np.sum(histograms[ids],axis=0)
+    def _cumulative_histogram_for_superpixels(self, ids, histograms):
+        h = np.sum(histograms[ids], axis=0)
         return h / h.sum()
 
     # Get a bool mask of the pixels for a given selection of superpixel IDs
-    def pixels_for_segment_selection(self, superpixels_labels, selection):
+    def _pixels_for_segment_selection(self, superpixels_labels, selection):
         pixels_mask = np.where(np.isin(superpixels_labels, selection), True, False)
         return pixels_mask
 
     # Get a normalized version of the given histograms (divide by sum)
-    def normalize_histograms(self, histograms):
+    def _normalize_histograms(self, histograms):
         return np.float32([h / h.sum() for h in histograms])
 
     # Perform graph cut using superpixels histograms
-    def do_graph_cut(self, fgbg_hists, fgbg_superpixels, norm_hists, neighbors):
+    def _do_graph_cut(self, fgbg_hists, fgbg_superpixels, norm_hists, neighbors):
         num_nodes = norm_hists.shape[0]
         # Create a graph of N nodes, and estimate of 5 edges per node
         g = maxflow.Graph[float](num_nodes, num_nodes * 5)
@@ -101,25 +103,25 @@ class GraphCut:
         hist_comp_alg = cv2.HISTCMP_KL_DIV
         # Smoothness term: cost between neighbors
         indptr, indices = neighbors
-        for i in range(len(indptr)-1):
-            N = indices[indptr[i]:indptr[i+1]] # list of neighbor superpixels
-            hi = norm_hists[i]                 # histogram for center
+        for i in range(len(indptr) - 1):
+            N = indices[indptr[i]:indptr[i + 1]]  # list of neighbor superpixels
+            hi = norm_hists[i]  # histogram for center
             for n in N:
                 if (n < 0) or (n > num_nodes):
                     continue
                 # Create two edges (forwards and backwards) with capacities based on
                 # histogram matching
-                hn = norm_hists[n]             # histogram for neighbor
-                g.add_edge(nodes[i], nodes[n], 20-cv2.compareHist(hi, hn, hist_comp_alg),
-                                               20-cv2.compareHist(hn, hi, hist_comp_alg))
+                hn = norm_hists[n]  # histogram for neighbor
+                g.add_edge(nodes[i], nodes[n], 20 - cv2.compareHist(hi, hn, hist_comp_alg),
+                           20 - cv2.compareHist(hn, hi, hist_comp_alg))
         # Match term: cost to FG/BG
-        for i,h in enumerate(norm_hists):
+        for i, h in enumerate(norm_hists):
             if i in fgbg_superpixels[0]:
-                g.add_tedge(nodes[i], 0, 1000) # FG - set high cost to BG
+                g.add_tedge(nodes[i], 0, 1000)  # FG - set high cost to BG
             elif i in fgbg_superpixels[1]:
-                g.add_tedge(nodes[i], 1000, 0) # BG - set high cost to FG
+                g.add_tedge(nodes[i], 1000, 0)  # BG - set high cost to FG
             else:
                 g.add_tedge(nodes[i], cv2.compareHist(fgbg_hists[0], h, hist_comp_alg),
-                                      cv2.compareHist(fgbg_hists[1], h, hist_comp_alg))
+                            cv2.compareHist(fgbg_hists[1], h, hist_comp_alg))
         g.maxflow()
         return g.get_grid_segments(nodes)
