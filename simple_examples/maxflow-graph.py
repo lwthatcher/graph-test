@@ -5,12 +5,29 @@ import maxflow
 from matplotlib import pyplot as plt
 
 
-img = imread("img/a2.png")
+img = imread("../img/astronaut.png")[::2, ::2]
+print('IMAGE', img.shape)
+
+mrk = imread("../img/astronaut_marking.png")
+S = mrk[..., 0]
+T = mrk[..., 2]
+
+print(mrk.shape)
+print(S.shape, T.shape)
+print('PERCENTS', np.unique(S, return_counts=True)[1][0] / (256*256), np.unique(T, return_counts=True)[1][0] / (256*256))
+print('S', np.unique(S, return_counts=True))
+print('T', np.unique(T, return_counts=True))
+
+S2 = (255 - S) / 255
+T2 = (255 - T) / 255
+print('S2', np.unique(S2, return_counts=True))
+print('T2', np.unique(T2, return_counts=True))
 
 # Create the graph.
 g = maxflow.Graph[int]()
 # Add the nodes. nodeids has the identifiers of the nodes in the grid.
 nodeids = g.add_grid_nodes(img.shape)
+print('NODES', nodeids.shape)
 # Add non-terminal edges with the same capacity.
 g.add_grid_edges(nodeids, 50)
 # Add the terminal edges. The image pixels are the capacities
