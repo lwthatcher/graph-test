@@ -1,5 +1,5 @@
 import numpy as np
-import scipy
+from scipy.spatial.distance import cdist
 from scipy.misc import imread
 import maxflow
 from matplotlib import pyplot as plt
@@ -23,37 +23,70 @@ print('T', np.unique(T, return_counts=True))
 σ2 = np.var(img)
 
 
-def av_dist(_img, mask):
+# t-links weights
+def t_weights(_img, mask):
     def _dist(a, b):
-        return np.exp(-(((a - b) ** 2) / (2 * σ2)))
+        d = cdist(a,b)
+        return np.exp(-((d**2) / (2*σ2)))
     result = np.empty(_img.shape[:-1])
     for index, _ in np.ndenumerate(_img[0]):
-        x = _img[index]
+        x = _img[index].reshape(1,3)
         result[index] = np.mean(_dist(x, _img[mask]))
     return result
 
 
+def add_n_weights(graph, _nodeids, _img):
+    def dmeter(d):
+        return 1 - np.exp(-((d**2)/(2*σ2)))
+    _il, _ir, _iu, _id = np.roll(_img, 1, 1), np.roll(_img, -1, 1), np.roll(_img, -1, 0), np.roll(_img, 1, 0)
+    D = np.mean(img-_il), np.mean(img-_ir), np.mean(img-_iu), np.mean(img-_id)
+    dl, dr, du, dd = [dmeter(d) for d in D]
+    # print percentiles:
+    print('dl', [np.percentile(dl, i) for i in [25, 50, 75, 100]])
+    print('dr', [np.percentile(dr, i) for i in [25, 50, 75, 100]])
+    print('du', [np.percentile(du, i) for i in [25, 50, 75, 100]])
+    print('dd', [np.percentile(dd, i) for i in [25, 50, 75, 100]])
+    # add edges
+    structure = np.array([[0, 0, 0],
+                          [0, 0, 1],
+                          [0, 0, 0]])
+    graph.add_grid_edges(_nodeids, dr, structure=structure, symmetric=False)
+    structure = np.array([[0, 0, 0],
+                          [1, 0, 0],
+                          [0, 0, 0]])
+    graph.add_grid_edges(_nodeids, dl, structure=structure, symmetric=False)
+    structure = np.array([[0, 1, 0],
+                          [0, 0, 0],
+                          [0, 0, 0]])
+    graph.add_grid_edges(_nodeids, du, structure=structure, symmetric=False)
+    structure = np.array([[0, 0, 0],
+                          [0, 0, 0],
+                          [0, 1, 0]])
+    graph.add_grid_edges(_nodeids, dd, structure=structure, symmetric=False)
+    return graph
+
+
+# masks
 s_mask = S == 1
 t_mask = T == 1
 
-
-F = av_dist(img, s_mask)
-B = av_dist(img, t_mask)
+# set foreground/background weights
+F = t_weights(img, s_mask)
+B = t_weights(img, t_mask)
+print('F/B', F.shape, B.shape, np.mean(F), np.mean(B))
 F[s_mask] = np.inf
 B[t_mask] = np.inf
-
-
+print('F', [np.percentile(F, i) for i in [25, 50, 75, 100]])
+print('B', [np.percentile(B, i) for i in [25, 50, 75, 100]])
 
 # Create the graph.
-g = maxflow.Graph[int]()
-# Add the nodes. nodeids has the identifiers of the nodes in the grid.
+g = maxflow.Graph[float]()
+# Add the nodes.
 nodeids = g.add_grid_nodes(img.shape[:-1])
 print('NODES', nodeids.shape)
-# Add non-terminal edges with the same capacity.
-g.add_grid_edges(nodeids, .5)
-# Add the terminal edges. The image pixels are the capacities
-# of the edges from the source node. The inverted image pixels
-# are the capacities of the edges to the sink node.
+# Add non-terminal edges with respective capacities.
+add_n_weights(g, nodeids, img)
+# Add the terminal edges.
 g.add_grid_tedges(nodeids, F, B)
 
 
@@ -61,7 +94,7 @@ g.add_grid_tedges(nodeids, F, B)
 g.maxflow()
 # Get the segments of the nodes in the grid.
 sgm = g.get_grid_segments(nodeids)
-print('SEGMENTS', sgm.shape)
+print('SEGMENTS', sgm.shape, np.unique(sgm, return_counts=True))
 
 # The labels should be 1 where sgm is False and 0 otherwise.
 img2 = np.int_(np.logical_not(sgm))
