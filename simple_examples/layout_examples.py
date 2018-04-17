@@ -122,6 +122,18 @@ def F():
     g.add_grid_edges(nodeids, 2, structure=structure, symmetric=False)
 
     plot_graph_2d(g, nodeids.shape, plot_terminals=False, title='Calling add_grid_edges twice')
+
+
+def G():
+    # using float graph
+    g = maxflow.Graph[float]()
+    nodeids = g.add_grid_nodes((5, 5))
+    structure = np.array([[0, 0, 0],
+                          [0, 0, 1.5],
+                          [0, 1.5, 0]])
+    g.add_grid_edges(nodeids, 0.5, structure=structure, symmetric=True)
+
+    plot_graph_2d(g, nodeids.shape, plot_terminals=False, title='using float values')
 # endregion
 
 
@@ -130,7 +142,8 @@ funcs = {'A': A,
          'C': C,
          'D': D,
          'E': E,
-         'F': F}
+         'F': F,
+         'G': G}
 
 
 if __name__ == "__main__":
