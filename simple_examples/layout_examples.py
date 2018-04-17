@@ -132,8 +132,47 @@ def G():
                           [0, 0, 1.5],
                           [0, 1.5, 0]])
     g.add_grid_edges(nodeids, 0.5, structure=structure, symmetric=True)
-
     plot_graph_2d(g, nodeids.shape, plot_terminals=False, title='using float values')
+
+
+def H():
+    """distance estimations"""
+    img = np.ones((5,5))
+    img[1:-1,1:-1] += 1
+    img[2:-2, 2:-1] += 1
+    img += (np.arange(25).reshape((5,5)) * .05)
+    print(img)
+    # variance
+    o2 = np.var(img)
+    # gaussian prob. distance
+    def dmeter(d):
+        return np.around(1 - np.exp(-((d**2)/(2*o2))), 3)
+    # roll diffs
+    _il, _ir, _iu, _id = np.roll(img,1,1), np.roll(img,-1,1), np.roll(img,-1,0), np.roll(img,1,0)
+    D = img-_il, img-_ir, img-_iu, img-_id
+    dl, dr, du, dd = [dmeter(d) for d in D]
+    # create graph
+    g = maxflow.Graph[float]()
+    nodeids = g.add_grid_nodes((5, 5))
+    # add edges
+    structure = np.array([[0, 0, 0],
+                          [0, 0, 1],
+                          [0, 0, 0]])
+    g.add_grid_edges(nodeids, dr, structure=structure, symmetric=False)
+    structure = np.array([[0, 0, 0],
+                          [1, 0, 0],
+                          [0, 0, 0]])
+    g.add_grid_edges(nodeids, dl, structure=structure, symmetric=False)
+    structure = np.array([[0, 1, 0],
+                          [0, 0, 0],
+                          [0, 0, 0]])
+    g.add_grid_edges(nodeids, du, structure=structure, symmetric=False)
+    structure = np.array([[0, 0, 0],
+                          [0, 0, 0],
+                          [0, 1, 0]])
+    g.add_grid_edges(nodeids, dd, structure=structure, symmetric=False)
+    # plot
+    plot_graph_2d(g, nodeids.shape, plot_terminals=False, title='distance estimations')
 # endregion
 
 
@@ -143,7 +182,8 @@ funcs = {'A': A,
          'D': D,
          'E': E,
          'F': F,
-         'G': G}
+         'G': G,
+         'H': H,}
 
 
 if __name__ == "__main__":
