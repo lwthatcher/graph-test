@@ -9,8 +9,8 @@ img = imread("../img/astronaut.png")[::2, ::2]
 print('IMAGE', img.shape)
 
 mrk = imread("../img/astronaut_marking.png")
-S = (255-mrk[..., 0]) / 255
-T = (255-mrk[..., 2]) / 255
+S = (255-mrk[..., 2]) / 255
+T = (255-mrk[..., 0]) / 255
 
 print(mrk.shape)
 print(S.shape, T.shape)
@@ -40,8 +40,11 @@ def add_n_weights(graph, _nodeids, _img):
     rdirs = [(1,1), (-1,1), (-1,0), (1,0)]
     def dmeter(d):
         return 1 - np.exp(-((d**2)/(2*σ2)))
-    _il, _ir, _iu, _id = [np.roll(_img, *r) for r in rdirs]
-    D = np.mean(img-_il), np.mean(img-_ir), np.mean(img-_iu), np.mean(img-_id)
+    def d_dist(x, x2):
+        result = [cdist(x[idx].reshape(1,3), x2[idx].reshape(1,3)) for idx, _ in np.ndenumerate(x[...,0])]
+        return np.array(result).reshape(x[...,0].shape)
+    D = [np.roll(_img, *r) for r in rdirs]
+    D = [d_dist(img, d) for d in D]
     dl, dr, du, dd = [dmeter(d) for d in D]
     # print percentiles:
     print('dl', [np.percentile(dl, i) for i in [25, 50, 75, 100]])
@@ -73,8 +76,8 @@ s_mask = S == 1
 t_mask = T == 1
 
 # set foreground/background weights
-F = t_weights(img, s_mask)
-B = t_weights(img, t_mask)
+F = t_weights(np.copy(img), s_mask)
+B = t_weights(np.copy(img), t_mask)
 print('F/B', F.shape, B.shape, np.mean(F), np.mean(B))
 F[s_mask] = np.inf
 B[t_mask] = np.inf
@@ -87,7 +90,7 @@ g = maxflow.Graph[float]()
 nodeids = g.add_grid_nodes(img.shape[:-1])
 print('NODES', nodeids.shape)
 # Add non-terminal edges with respective capacities.
-add_n_weights(g, nodeids, img)
+add_n_weights(g, nodeids, np.copy(img))
 # Add the terminal edges.
 g.add_grid_tedges(nodeids, F, B)
 
