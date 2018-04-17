@@ -18,32 +18,29 @@ def circle_mask(_img, origin, r):
     return mask
 
 
-# create figure
-fig = plt.figure()
+def a2_markings(plot=True):
+    # foreground
+    fg = np.ones(a.shape) * 255
+    msk1 = circle_mask(a, (35, 35), 7)
+    fg[msk1] = a[msk1]
+    # background
+    bg = np.zeros(a.shape)
+    msk2 = circle_mask(a, (45, 15), 6)
+    bg[msk2] = a[msk2]
+    # r/b markings
+    markings = np.ones((*a.shape, 3)) * 255
+    markings[fg == 0, 1:] = 0     # red
+    markings[bg == 255, :-1] = 0  # blue
+    # plot if specified
+    if plot:
+        plt.imshow(markings)
+        plt.show()
+    # return markings
+    return markings
 
-# A
-ax = fig.add_subplot(141)
-ax.imshow(a, cmap=plt.cm.gray, interpolation='nearest')
-# foreground
-ax = fig.add_subplot(142)
-fg = np.ones(a.shape) * 255
-msk1 = circle_mask(a, (35, 35), 7)
-fg[msk1] = a[msk1]
-ax.imshow(fg, cmap=plt.cm.gray, interpolation='nearest')
-# background
-ax = fig.add_subplot(143)
-bg = np.zeros(a.shape)
-msk2 = circle_mask(a, (45, 15), 6)
-bg[msk2] = a[msk2]
-ax.imshow(bg, cmap=plt.cm.gray, interpolation='nearest')
-# r/b markings
-ax = fig.add_subplot(144)
-markings = np.ones((*a.shape, 3)) * 255
-markings[fg == 0, 1:] = 0     # red
-markings[bg == 255, :-1] = 0  # blue
-ax.imshow(markings)
 
-plt.show()
+seeds = a2_markings()
+
 # # Create the graph.
 # g = maxflow.Graph[int]()
 # # Add the nodes. nodeids has the identifiers of the nodes in the grid.
