@@ -3,14 +3,16 @@
 This file contains a list of examples with different layouts that can be
 obtained using the ``add_grid_edges`` method.
 """
-
 import argparse
 import numpy as np
 import maxflow
 import networkx as nx
 import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings("ignore")
 
 
+# region Helper Functions
 def plot_graph_2d(graph, nodes_shape, plot_weights=True, plot_terminals=True, font_size=7, title=None):
     X, Y = np.mgrid[:nodes_shape[0], :nodes_shape[1]]
     aux = np.array([Y.ravel(), X[::-1].ravel()]).T
@@ -39,17 +41,15 @@ def plot_graph_2d(graph, nodes_shape, plot_weights=True, plot_terminals=True, fo
         print('TITLE', title)
         plt.suptitle(title)
     plt.show()
+# endregion
 
+
+# region Plot Functions
 def A():
     # Standard 4-connected grid
     g = maxflow.Graph[int]()
     nodeids = g.add_grid_nodes((5, 5))
     g.add_grid_edges(nodeids, 1)
-    # Equivalent to
-    # structure = maxflow.vonNeumann_structure(ndim=2, directed=False)
-    # g.add_grid_edges(nodeids, 1,
-    #                  structure=structure,
-    #                  symmetric=False)
     plot_graph_2d(g, nodeids.shape, plot_terminals=False, title='Standard 4-connected grid')
 
 
@@ -106,6 +106,7 @@ def E():
                           [0, 1, 0]])
     g.add_grid_edges(nodeids, 1, structure=structure, symmetric=False)
     plot_graph_2d(g, (5, 5), plot_terminals=False, title='Central node connected to every other node')
+# endregion
 
 
 funcs = {'A': A,
@@ -117,7 +118,7 @@ funcs = {'A': A,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('plots', nargs='+', choices=['A', 'B', 'C', 'D', 'E'], help='list of plots you want to show')
+    parser.add_argument('plots', nargs='+', choices=funcs.keys(), help='list of plots you want to show')
     args = parser.parse_args()
     for plot in args.plots:
         print('PLOT {}'.format(plot))
