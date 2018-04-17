@@ -26,24 +26,25 @@ print('T2', np.unique(T2, return_counts=True))
 # Create the graph.
 g = maxflow.Graph[int]()
 # Add the nodes. nodeids has the identifiers of the nodes in the grid.
-nodeids = g.add_grid_nodes(img.shape)
+nodeids = g.add_grid_nodes(img.shape[:-1])
 print('NODES', nodeids.shape)
 # Add non-terminal edges with the same capacity.
-g.add_grid_edges(nodeids, 50)
+g.add_grid_edges(nodeids, .5)
 # Add the terminal edges. The image pixels are the capacities
 # of the edges from the source node. The inverted image pixels
 # are the capacities of the edges to the sink node.
-g.add_grid_tedges(nodeids, img, 255-img)
+g.add_grid_tedges(nodeids, S2, T2)
 
 
 # Find the maximum flow.
 g.maxflow()
 # Get the segments of the nodes in the grid.
 sgm = g.get_grid_segments(nodeids)
-
+print('SEGMENTS', sgm.shape)
 
 # The labels should be 1 where sgm is False and 0 otherwise.
 img2 = np.int_(np.logical_not(sgm))
+print('IMG2', img2.shape)
 # Show the result.
 
 plt.imshow(img2, cmap=plt.cm.gray, interpolation='nearest')
