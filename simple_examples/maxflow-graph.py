@@ -9,8 +9,8 @@ img = imread("../img/astronaut.png")[::2, ::2]
 print('IMAGE', img.shape)
 
 mrk = imread("../img/astronaut_marking.png")
-S = mrk[..., 0]
-T = mrk[..., 2]
+S = (255-mrk[..., 0]) / 255
+T = (255-mrk[..., 2]) / 255
 
 print(mrk.shape)
 print(S.shape, T.shape)
@@ -18,10 +18,31 @@ print('PERCENTS', np.unique(S, return_counts=True)[1][0] / (256*256), np.unique(
 print('S', np.unique(S, return_counts=True))
 print('T', np.unique(T, return_counts=True))
 
-S2 = (255 - S) / 255
-T2 = (255 - T) / 255
-print('S2', np.unique(S2, return_counts=True))
-print('T2', np.unique(T2, return_counts=True))
+
+# variance
+σ2 = np.var(img)
+
+
+def av_dist(_img, mask):
+    def _dist(a, b):
+        return np.exp(-(((a - b) ** 2) / (2 * σ2)))
+    result = np.empty(_img.shape[:-1])
+    for index, _ in np.ndenumerate(_img[0]):
+        x = _img[index]
+        result[index] = np.mean(_dist(x, _img[mask]))
+    return result
+
+
+s_mask = S == 1
+t_mask = T == 1
+
+
+F = av_dist(img, s_mask)
+B = av_dist(img, t_mask)
+F[s_mask] = np.inf
+B[t_mask] = np.inf
+
+
 
 # Create the graph.
 g = maxflow.Graph[int]()
@@ -33,7 +54,7 @@ g.add_grid_edges(nodeids, .5)
 # Add the terminal edges. The image pixels are the capacities
 # of the edges from the source node. The inverted image pixels
 # are the capacities of the edges to the sink node.
-g.add_grid_tedges(nodeids, S2, T2)
+g.add_grid_tedges(nodeids, F, B)
 
 
 # Find the maximum flow.

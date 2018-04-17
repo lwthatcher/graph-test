@@ -48,7 +48,7 @@ def a2_markings(plot=True):
 
 def av_dist(_img, mask):
     def _dist(a, b):
-        return 1 - np.exp(-(((a - b) ** 2) / (2 * σ2)))
+        return np.exp(-(((a - b) ** 2) / (2 * σ2)))
     result = np.empty(_img.shape)
     for index, x in np.ndenumerate(_img):
         result[index] = np.mean(_dist(x, _img[mask]))
@@ -106,8 +106,8 @@ plt.imshow(X, cmap=plt.cm.gray, interpolation='nearest')
 plt.show()
 
 # define foreground/background
-F = av_dist(img, t_mask)
-B = av_dist(img, s_mask)
+F = av_dist(img, s_mask)
+B = av_dist(img, t_mask)
 
 print('F', [np.percentile(F, i) for i in [25, 50, 75, 100]])
 print('B', [np.percentile(B, i) for i in [25, 50, 75, 100]])
