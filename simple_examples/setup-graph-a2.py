@@ -32,7 +32,7 @@ def a2_markings(plot=True):
     fg[msk1] = a[msk1]
     # background
     bg = np.zeros(a.shape)
-    msk2 = circle_mask(a, (45, 15), 6)
+    msk2 = circle_mask(a, (10, 10), 6)
     bg[msk2] = a[msk2]
     # r/b markings
     markings = np.ones((*a.shape, 3)) * 255
@@ -88,7 +88,7 @@ def n_dist(graph, _nodeids, _img):
 
 
 # get seeds
-seeds = a2_markings(plot=True)
+seeds = a2_markings(plot=False)
 S = (255 - seeds[..., 0]) / 255
 T = (255 - seeds[..., 2]) / 255
 print('S', np.unique(S, return_counts=True))
@@ -97,19 +97,17 @@ print('T', np.unique(T, return_counts=True))
 s_mask = S == 1
 t_mask = T == 1
 
-X = np.zeros(img.shape)
+X = np.ones(img.shape) * .5
 X[s_mask] = 1
+X[t_mask] = 0
+X *= 255
+X = X.astype(int)
 plt.imshow(X, cmap=plt.cm.gray, interpolation='nearest')
 plt.show()
 
-Y = np.zeros(img.shape)
-Y[t_mask] = 1
-plt.imshow(Y, cmap=plt.cm.gray, interpolation='nearest')
-plt.show()
-
 # define foreground/background
-F = av_dist(img, s_mask)
-B = av_dist(img, t_mask)
+F = av_dist(img, t_mask)
+B = av_dist(img, s_mask)
 
 print('F', [np.percentile(F, i) for i in [25, 50, 75, 100]])
 print('B', [np.percentile(B, i) for i in [25, 50, 75, 100]])
