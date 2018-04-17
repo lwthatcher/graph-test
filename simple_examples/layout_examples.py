@@ -10,7 +10,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 
-def plot_graph_2d(graph, nodes_shape, plot_weights=True, plot_terminals=True, font_size=7):
+def plot_graph_2d(graph, nodes_shape, plot_weights=True, plot_terminals=True, font_size=7, title=None):
     X, Y = np.mgrid[:nodes_shape[0], :nodes_shape[1]]
     aux = np.array([Y.ravel(), X[::-1].ravel()]).T
     positions = {i: aux[i] for i in range(25)}
@@ -34,6 +34,9 @@ def plot_graph_2d(graph, nodes_shape, plot_weights=True, plot_terminals=True, fo
                                      label_pos=0.3,
                                      font_size=font_size)
     plt.axis('equal')
+    if title:
+        print('TITLE', title)
+        plt.suptitle(title)
     plt.show()
 
 # Standard 4-connected grid
@@ -45,7 +48,7 @@ g.add_grid_edges(nodeids, 1)
 # g.add_grid_edges(nodeids, 1,
 #                  structure=structure,
 #                  symmetric=False)
-plot_graph_2d(g, nodeids.shape, plot_terminals=False)
+plot_graph_2d(g, nodeids.shape, plot_terminals=False, title='Standard 4-connected grid')
 
 # 8-connected grid
 g = maxflow.Graph[int]()
@@ -55,7 +58,7 @@ structure = np.array([[0, 0, 0],
                       [1, 1, 1]])
 # Also structure = maxflow.moore_structure(ndim=2, directed=True)
 g.add_grid_edges(nodeids, 1, structure=structure, symmetric=True)
-plot_graph_2d(g, nodeids.shape, plot_terminals=False)
+plot_graph_2d(g, nodeids.shape, plot_terminals=False, title='8-connected grid')
 
 # 24-connected 5x5 neighborhood
 g = maxflow.Graph[int]()
@@ -66,7 +69,7 @@ structure = np.array([[1, 1, 1, 1, 1],
                       [1, 1, 1, 1, 1],
                       [1, 1, 1, 1, 1]])
 g.add_grid_edges(nodeids, 1, structure=structure, symmetric=False)
-plot_graph_2d(g, nodeids.shape, plot_terminals=False, plot_weights=False)
+plot_graph_2d(g, nodeids.shape, plot_terminals=False, plot_weights=False, title='24-connected 5x5 neighborhood')
 
 # Diagonal, not symmetric
 g = maxflow.Graph[int]()
@@ -75,7 +78,7 @@ structure = np.array([[0, 0, 0],
                       [0, 0, 0],
                       [0, 0, 1]])
 g.add_grid_edges(nodeids, 1, structure=structure, symmetric=False)
-plot_graph_2d(g, nodeids.shape, plot_terminals=False)
+plot_graph_2d(g, nodeids.shape, plot_terminals=False, title='Diagonal, not symmetric')
 
 # Central node connected to every other node
 g = maxflow.Graph[int]()
@@ -92,4 +95,4 @@ structure = np.array([[0, 0, 0],
                       [0, 0, 0],
                       [0, 1, 0]])
 g.add_grid_edges(nodeids, 1, structure=structure, symmetric=False)
-plot_graph_2d(g, (5, 5), plot_terminals=False)
+plot_graph_2d(g, (5, 5), plot_terminals=False, title='Central node connected to every other node')
