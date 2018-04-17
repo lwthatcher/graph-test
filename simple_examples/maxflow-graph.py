@@ -25,9 +25,10 @@ print('T', np.unique(T, return_counts=True))
 
 # t-links weights
 def t_weights(_img, mask):
+    _σ2 = np.var(_img[mask])
     def _dist(a, b):
         d = cdist(a,b)
-        return np.exp(-((d**2) / (2*σ2)))
+        return np.exp(-((d**2) / (2*_σ2)))
     result = np.empty(_img.shape[:-1])
     for index, _ in np.ndenumerate(_img[0]):
         x = _img[index].reshape(1,3)
@@ -36,9 +37,10 @@ def t_weights(_img, mask):
 
 
 def add_n_weights(graph, _nodeids, _img):
+    rdirs = [(1,1), (-1,1), (-1,0), (1,0)]
     def dmeter(d):
         return 1 - np.exp(-((d**2)/(2*σ2)))
-    _il, _ir, _iu, _id = np.roll(_img, 1, 1), np.roll(_img, -1, 1), np.roll(_img, -1, 0), np.roll(_img, 1, 0)
+    _il, _ir, _iu, _id = [np.roll(_img, *r) for r in rdirs]
     D = np.mean(img-_il), np.mean(img-_ir), np.mean(img-_iu), np.mean(img-_id)
     dl, dr, du, dd = [dmeter(d) for d in D]
     # print percentiles:
