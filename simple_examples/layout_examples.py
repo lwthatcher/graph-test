@@ -9,7 +9,7 @@ import maxflow
 import networkx as nx
 import matplotlib.pyplot as plt
 import warnings
-warnings.filterwarnings("ignore")
+# warnings.filterwarnings("ignore")
 
 
 # region Helper Functions
@@ -106,6 +106,22 @@ def E():
                           [0, 1, 0]])
     g.add_grid_edges(nodeids, 1, structure=structure, symmetric=False)
     plot_graph_2d(g, (5, 5), plot_terminals=False, title='Central node connected to every other node')
+
+
+def F():
+    # Calling add_grid_edges twice
+    g = maxflow.Graph[int]()
+    nodeids = g.add_grid_nodes((5, 5))
+    structure = maxflow.vonNeumann_structure(ndim=2, directed=False)
+    g.add_grid_edges(nodeids, 1,
+                     structure=structure,
+                     symmetric=False)
+    structure = np.array([[0, 0, 0],
+                          [0, 0, 0],
+                          [0, 1, 1]])
+    g.add_grid_edges(nodeids, 2, structure=structure, symmetric=False)
+
+    plot_graph_2d(g, nodeids.shape, plot_terminals=False, title='Calling add_grid_edges twice')
 # endregion
 
 
@@ -113,7 +129,8 @@ funcs = {'A': A,
          'B': B,
          'C': C,
          'D': D,
-         'E': E}
+         'E': E,
+         'F': F}
 
 
 if __name__ == "__main__":
