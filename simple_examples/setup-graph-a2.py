@@ -19,27 +19,31 @@ def circle_mask(_img, origin, r):
 
 
 # create figure
-fig = plt.figure(figsize=(24, 16))
+fig = plt.figure()
 
 # A
-ax = fig.add_subplot(131)
+ax = fig.add_subplot(141)
 ax.imshow(a, cmap=plt.cm.gray, interpolation='nearest')
 # foreground
-ax = fig.add_subplot(132)
+ax = fig.add_subplot(142)
 fg = np.ones(a.shape) * 255
-msk = circle_mask(a, (35,35), 7)
-fg[msk] = a[msk]
+msk1 = circle_mask(a, (35, 35), 7)
+fg[msk1] = a[msk1]
 ax.imshow(fg, cmap=plt.cm.gray, interpolation='nearest')
 # background
-ax = fig.add_subplot(133)
+ax = fig.add_subplot(143)
 bg = np.zeros(a.shape)
-msk = circle_mask(a, (45,15), 6)
-bg[msk] = a[msk]
+msk2 = circle_mask(a, (45, 15), 6)
+bg[msk2] = a[msk2]
 ax.imshow(bg, cmap=plt.cm.gray, interpolation='nearest')
+# r/b markings
+ax = fig.add_subplot(144)
+markings = np.ones((*a.shape, 3)) * 255
+markings[fg == 0, 1:] = 0     # red
+markings[bg == 255, :-1] = 0  # blue
+ax.imshow(markings)
+
 plt.show()
-
-
-
 # # Create the graph.
 # g = maxflow.Graph[int]()
 # # Add the nodes. nodeids has the identifiers of the nodes in the grid.
