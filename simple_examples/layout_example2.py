@@ -34,7 +34,6 @@ def plot_graph_2d(graph, nodes_shape, plot_weights=True, plot_terminals=True, fo
                                      edge_labels=edge_labels,
                                      label_pos=0.3,
                                      font_size=font_size)
-
     plt.axis('equal')
     plt.show()
 
