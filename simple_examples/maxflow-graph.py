@@ -12,10 +12,10 @@ mrk = imread("../img/astronaut_marking.png")
 T = (255-mrk[..., 0]) / 255
 S = (255-mrk[..., 2]) / 255
 
-plt.imshow(S)
-plt.show()
-plt.imshow(T)
-plt.show()
+# plt.imshow(S)
+# plt.show()
+# plt.imshow(T)
+# plt.show()
 
 print(mrk.shape)
 print(S.shape, T.shape)
@@ -81,13 +81,13 @@ s_mask = S == 1
 t_mask = T == 1
 
 # set foreground/background weights
-F = t_weights(np.copy(img), s_mask)
-B = t_weights(np.copy(img), t_mask)
+F = t_weights(img, s_mask)
+B = t_weights(img, t_mask)
 print('F/B', F.shape, B.shape, np.mean(F), np.mean(B))
-F[s_mask] = np.inf
-B[t_mask] = np.inf
 print('F', np.mean(F))
 print('B', np.mean(B))
+F[s_mask] = np.inf
+B[t_mask] = np.inf
 # print('F', [np.percentile(F, i) for i in [25, 50, 75, 100]])
 # print('B', [np.percentile(B, i) for i in [25, 50, 75, 100]])
 
@@ -97,9 +97,9 @@ g = maxflow.Graph[float]()
 nodeids = g.add_grid_nodes(img.shape[:-1])
 print('NODES', nodeids.shape)
 # Add non-terminal edges with respective capacities.
-add_n_weights(g, nodeids, np.copy(img))
+add_n_weights(g, nodeids, img)
 # Add the terminal edges.
-g.add_grid_tedges(nodeids, F, B)
+g.add_grid_tedges(nodeids, F*1.5, B*1.5)
 
 
 # Find the maximum flow.
