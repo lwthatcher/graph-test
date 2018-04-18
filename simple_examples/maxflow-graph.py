@@ -9,8 +9,13 @@ img = imread("../img/astronaut.png")[::2, ::2]
 print('IMAGE', img.shape)
 
 mrk = imread("../img/astronaut_marking.png")
-S = (255-mrk[..., 2]) / 255
 T = (255-mrk[..., 0]) / 255
+S = (255-mrk[..., 2]) / 255
+
+plt.imshow(S)
+plt.show()
+plt.imshow(T)
+plt.show()
 
 print(mrk.shape)
 print(S.shape, T.shape)
@@ -30,7 +35,7 @@ def t_weights(_img, mask):
         d = cdist(a,b)
         return np.exp(-((d**2) / (2*_σ2)))
     result = np.empty(_img.shape[:-1])
-    for index, _ in np.ndenumerate(_img[0]):
+    for index, _ in np.ndenumerate(_img[...,0]):
         x = _img[index].reshape(1,3)
         result[index] = np.mean(_dist(x, _img[mask]))
     return result
@@ -81,8 +86,10 @@ B = t_weights(np.copy(img), t_mask)
 print('F/B', F.shape, B.shape, np.mean(F), np.mean(B))
 F[s_mask] = np.inf
 B[t_mask] = np.inf
-print('F', [np.percentile(F, i) for i in [25, 50, 75, 100]])
-print('B', [np.percentile(B, i) for i in [25, 50, 75, 100]])
+print('F', np.mean(F))
+print('B', np.mean(B))
+# print('F', [np.percentile(F, i) for i in [25, 50, 75, 100]])
+# print('B', [np.percentile(B, i) for i in [25, 50, 75, 100]])
 
 # Create the graph.
 g = maxflow.Graph[float]()
