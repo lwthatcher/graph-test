@@ -1,3 +1,4 @@
+from tqdm import tqdm
 import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.misc import imread
@@ -24,8 +25,10 @@ print('S', np.unique(S, return_counts=True))
 print('T', np.unique(T, return_counts=True))
 
 
-# variance
-σ2 = np.var(img)
+# PARAMS
+λf = 1.1
+λb = 1.
+λn = 10
 
 
 # t-links weights
@@ -35,13 +38,15 @@ def t_weights(_img, mask):
         d = cdist(a,b)
         return np.exp(-((d**2) / (2*_σ2)))
     result = np.empty(_img.shape[:-1])
-    for index, _ in np.ndenumerate(_img[...,0]):
+    _total = _img.shape[0]*_img.shape[1]
+    for index, _ in tqdm(np.ndenumerate(_img[...,0]), total=_total):
         x = _img[index].reshape(1,3)
         result[index] = np.mean(_dist(x, _img[mask]))
     return result
 
 
-def add_n_weights(graph, _nodeids, _img):
+def add_n_weights(graph, _nodeids, _img, λ=1.):
+    σ2 = np.var(_img)
     rdirs = [(1,1), (-1,1), (-1,0), (1,0)]
     def dmeter(d):
         return 1 - np.exp(-((d**2)/(2*σ2)))
@@ -50,7 +55,7 @@ def add_n_weights(graph, _nodeids, _img):
         return np.array(result).reshape(x[...,0].shape)
     D = [np.roll(_img, *r) for r in rdirs]
     D = [d_dist(img, d) for d in D]
-    dl, dr, du, dd = [dmeter(d) for d in D]
+    dl, dr, du, dd = [dmeter(d)*λ for d in D]
     # print percentiles:
     print('dl', [np.percentile(dl, i) for i in [25, 50, 75, 100]])
     print('dr', [np.percentile(dr, i) for i in [25, 50, 75, 100]])
@@ -97,9 +102,9 @@ g = maxflow.Graph[float]()
 nodeids = g.add_grid_nodes(img.shape[:-1])
 print('NODES', nodeids.shape)
 # Add non-terminal edges with respective capacities.
-add_n_weights(g, nodeids, img)
+add_n_weights(g, nodeids, img, λ=λn)
 # Add the terminal edges.
-g.add_grid_tedges(nodeids, F*1.5, B*1.5)
+g.add_grid_tedges(nodeids, F*λf, B*λb)
 
 
 # Find the maximum flow.
