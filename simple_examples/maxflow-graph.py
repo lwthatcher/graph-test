@@ -1,4 +1,4 @@
-from tqdm import tqdm
+from tqdm import tqdm, trange
 import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.misc import imread
@@ -27,22 +27,27 @@ print('T', np.unique(T, return_counts=True))
 
 # PARAMS
 λf = 1.1
-λb = 1.
-λn = 10
+λb = 1
+λn = 2
+
+
+def dist_map(x, msk):
+    _d = np.array([x-(x[msk][i]) for i in trange(x[msk].shape[0])])
+    ssq = np.sum(_d**2, axis=-1)
+    return np.mean(np.sqrt(ssq), axis=0)
 
 
 # t-links weights
-def t_weights(_img, mask):
-    _σ2 = np.var(_img[mask])
-    def _dist(a, b):
-        d = cdist(a,b)
-        return np.exp(-((d**2) / (2*_σ2)))
-    result = np.empty(_img.shape[:-1])
-    _total = _img.shape[0]*_img.shape[1]
-    for index, _ in tqdm(np.ndenumerate(_img[...,0]), total=_total):
-        x = _img[index].reshape(1,3)
-        result[index] = np.mean(_dist(x, _img[mask]))
-    return result
+def t_weights(x, msk):
+    _σ2 = np.var(x)
+    s = x.shape
+    def dmeter(d):
+        return np.exp(-((d**2)/(2*_σ2)))
+    y1 = x.reshape((s[0]*s[1], s[2]))
+    d1 = cdist(y1, x[msk])
+    ed1 = dmeter(d1)
+    e1 = np.mean(ed1,axis=1)
+    return e1.reshape((s[0],s[1]))
 
 
 def add_n_weights(graph, _nodeids, _img, λ=1.):
