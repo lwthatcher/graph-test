@@ -1,7 +1,6 @@
 import cv2
 import maxflow
 import numpy as np
-import matplotlib.pyplot as plt
 from skimage.segmentation import slic
 from skimage.segmentation import mark_boundaries
 from scipy.spatial import Delaunay
@@ -13,8 +12,6 @@ class SuperPixelCut(BaseCut):
 
     def __init__(self, img, seeds, outfile, **kwargs):
         super().__init__(img, seeds, outfile, **kwargs)
-        self.fig_file = kwargs.get('fig_file', None)
-        self.show_figure = kwargs.get('show_figure', True)
         # SLIC params
         self.n_segments = kwargs.get('n_segments', 500)
         self.compactness = kwargs.get('compactness', 20)
@@ -39,22 +36,11 @@ class SuperPixelCut(BaseCut):
         return graph_cut, segmask
 
     def plot_results(self):
-        plt.subplot(1, 2, 2), plt.xticks([]), plt.yticks([])
-        plt.title('segmentation')
-        segmask = self._pixels_for_segment_selection(self.segments, np.nonzero(self.graph_cut))
-        plt.imshow(segmask)
         # SLIC + markings plot
-        plt.subplot(1, 2, 1), plt.xticks([]), plt.yticks([])
         img = mark_boundaries(self.img, self.segments)
         img[self.seeds[:, :, 0] != 255] = (1, 0, 0)
         img[self.seeds[:, :, 2] != 255] = (0, 0, 1)
-        plt.imshow(img)
-        plt.title("SLIC + markings")
-        # display result
-        if self.fig_file:
-            plt.savefig(self.fig_file, bbox_inches='tight', dpi=96)
-        if self.show_figure:
-            plt.show()
+        self.draw_figures(('segmentation', self.segmask), ('SLIC + markings', img))
 
     # Calculate the SLIC superpixels, their histograms and neighbors
     def _superpixels_histograms_neighbors(self):
