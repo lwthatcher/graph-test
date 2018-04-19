@@ -5,7 +5,7 @@ import argparse
 from PIL import Image
 from matplotlib import path
 from matplotlib.widgets import LassoSelector
-from cuts.superpixels import SuperPixelCut
+from cuts import SuperPixelCut
 
 
 # region Interactive Seed Drawing

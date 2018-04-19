@@ -7,6 +7,7 @@ from skimage.segmentation import mark_boundaries
 from scipy.spatial import Delaunay
 
 
+# noinspection PyTypeChecker
 class SuperPixelCut:
 
     def __init__(self, img, seeds, outfile, **kwargs):
