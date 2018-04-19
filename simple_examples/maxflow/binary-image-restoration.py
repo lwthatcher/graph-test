@@ -1,12 +1,10 @@
 import numpy as np
-import scipy
 from scipy.misc import imread
 import maxflow
 from matplotlib import pyplot as plt
 
 
-img = imread("img/a2.png")
-
+img = imread("../../img/a2.png")
 # Create the graph.
 g = maxflow.Graph[int]()
 # Add the nodes. nodeids has the identifiers of the nodes in the grid.
