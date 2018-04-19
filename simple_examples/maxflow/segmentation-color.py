@@ -1,4 +1,4 @@
-from tqdm import tqdm, trange
+from tqdm import tqdm
 import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.misc import imread
@@ -7,17 +7,13 @@ from matplotlib import pyplot as plt
 import datetime
 
 
-img = imread("../img/astronaut.png")[::2, ::2]
+img = imread("../../img/astronaut.png")[::2, ::2]
 print('IMAGE', img.shape)
 
-mrk = imread("../img/astronaut_marking.png")
+mrk = imread("../../img/astronaut_marking.png")
 T = (255-mrk[..., 0]) / 255
 S = (255-mrk[..., 2]) / 255
 
-# plt.imshow(S)
-# plt.show()
-# plt.imshow(T)
-# plt.show()
 
 print(mrk.shape)
 print(S.shape, T.shape)

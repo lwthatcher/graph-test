@@ -4,8 +4,8 @@ from scipy.misc import imread
 import maxflow
 from matplotlib import pyplot as plt
 
-a = imread("../img/a.png")
-# img = imread("../img/a2.png")
+a = imread("../../img/a.png")
+# img = imread("../../img/a2.png")
 img = (a/255) + (np.random.randn(64,64) / 2)
 print(img.shape)
 
