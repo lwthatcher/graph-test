@@ -4,6 +4,7 @@ from scipy.spatial.distance import cdist
 from scipy.misc import imread
 import maxflow
 from matplotlib import pyplot as plt
+import datetime
 
 
 img = imread("../img/astronaut.png")[::2, ::2]
@@ -31,19 +32,20 @@ print('T', np.unique(T, return_counts=True))
 λn = 2
 
 
-def dist_map(x, msk):
-    _d = np.array([x-(x[msk][i]) for i in trange(x[msk].shape[0])])
-    ssq = np.sum(_d**2, axis=-1)
-    return np.mean(np.sqrt(ssq), axis=0)
+def roll_dist(_x, _xr, dmeter):
+    x = _x.reshape((-1, 3))
+    xr = _xr.reshape((-1, 3))
+    dr = np.sqrt(np.sum((x-xr)**2, axis=1))
+    return dmeter(dr).reshape((_x.shape[:-1]))
 
 
 # t-links weights
 def t_weights(x, msk):
-    _σ2 = np.var(x)
+    σ2 = np.var(x)
     s = x.shape
     def dmeter(d):
-        return np.exp(-((d**2)/(2*_σ2)))
-    y1 = x.reshape((s[0]*s[1], s[2]))
+        return np.exp(-((d**2)/(2*σ2)))
+    y1 = x.reshape((-1, 3))
     d1 = cdist(y1, x[msk])
     ed1 = dmeter(d1)
     e1 = np.mean(ed1,axis=1)
@@ -58,31 +60,46 @@ def add_n_weights(graph, _nodeids, _img, λ=1.):
     def d_dist(x, x2):
         result = [cdist(x[idx].reshape(1,3), x2[idx].reshape(1,3)) for idx, _ in np.ndenumerate(x[...,0])]
         return np.array(result).reshape(x[...,0].shape)
-    D = [np.roll(_img, *r) for r in rdirs]
-    D = [d_dist(img, d) for d in D]
+    rolls = [np.roll(_img, *r) for r in rdirs]
+    st1 = datetime.datetime.now()
+    D = [d_dist(img, d) for d in rolls]
     dl, dr, du, dd = [dmeter(d)*λ for d in D]
+    et1 = datetime.datetime.now()
+    d_time = (et1-st1).total_seconds()
+    st2 = datetime.datetime.now()
+    el, er, eu, ed = [roll_dist(_img, xr, dmeter)*λ for xr in tqdm(rolls, total=len(rolls))]
+    et2 = datetime.datetime.now()
+    e_time = (et2 - st2).total_seconds()
+    print('d time: {}'.format(d_time))
+    print('e time: {}'.format(e_time))
+    print(np.array_equal(dl,el), np.array_equal(dr,er), np.array_equal(du,eu), np.array_equal(dd,ed))
     # print percentiles:
     print('dl', [np.percentile(dl, i) for i in [25, 50, 75, 100]])
     print('dr', [np.percentile(dr, i) for i in [25, 50, 75, 100]])
     print('du', [np.percentile(du, i) for i in [25, 50, 75, 100]])
     print('dd', [np.percentile(dd, i) for i in [25, 50, 75, 100]])
+
+    print('el', [np.percentile(el, i) for i in [25, 50, 75, 100]])
+    print('er', [np.percentile(er, i) for i in [25, 50, 75, 100]])
+    print('eu', [np.percentile(eu, i) for i in [25, 50, 75, 100]])
+    print('ed', [np.percentile(ed, i) for i in [25, 50, 75, 100]])
     # add edges
     structure = np.array([[0, 0, 0],
                           [0, 0, 1],
                           [0, 0, 0]])
-    graph.add_grid_edges(_nodeids, dr, structure=structure, symmetric=False)
+    graph.add_grid_edges(_nodeids, er, structure=structure, symmetric=False)
     structure = np.array([[0, 0, 0],
                           [1, 0, 0],
                           [0, 0, 0]])
-    graph.add_grid_edges(_nodeids, dl, structure=structure, symmetric=False)
+    graph.add_grid_edges(_nodeids, el, structure=structure, symmetric=False)
     structure = np.array([[0, 1, 0],
                           [0, 0, 0],
                           [0, 0, 0]])
-    graph.add_grid_edges(_nodeids, du, structure=structure, symmetric=False)
+    graph.add_grid_edges(_nodeids, eu, structure=structure, symmetric=False)
     structure = np.array([[0, 0, 0],
                           [0, 0, 0],
                           [0, 1, 0]])
-    graph.add_grid_edges(_nodeids, dd, structure=structure, symmetric=False)
+    graph.add_grid_edges(_nodeids, ed, structure=structure, symmetric=False)
     return graph
 
 
