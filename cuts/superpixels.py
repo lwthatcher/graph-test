@@ -5,16 +5,14 @@ import matplotlib.pyplot as plt
 from skimage.segmentation import slic
 from skimage.segmentation import mark_boundaries
 from scipy.spatial import Delaunay
+from .base import BaseCut
 
 
 # noinspection PyTypeChecker
-class SuperPixelCut:
+class SuperPixelCut(BaseCut):
 
     def __init__(self, img, seeds, outfile, **kwargs):
-        self.img = img
-        self.seeds = seeds
-        # output files
-        self.outfile = outfile
+        super().__init__(img, seeds, outfile, **kwargs)
         self.fig_file = kwargs.get('fig_file', None)
         self.show_figure = kwargs.get('show_figure', True)
         # SLIC params
@@ -25,26 +23,29 @@ class SuperPixelCut:
     def segment(self):
         img = self.img
         centers, colors_hists, segments, neighbors = self._superpixels_histograms_neighbors()
-        fg_segments, bg_segments = self._find_superpixels_under_marking(self.seeds, segments)
+        fg, bg = self._find_superpixels_under_marking(self.seeds, segments)
         # get cumulative BG/FG histograms, before normalization
-        fg_cumulative_hist = self._cumulative_histogram_for_superpixels(fg_segments, colors_hists)
-        bg_cumulative_hist = self._cumulative_histogram_for_superpixels(bg_segments, colors_hists)
+        fg_hist = self._cumulative_histogram_for_superpixels(fg, colors_hists)
+        bg_hist = self._cumulative_histogram_for_superpixels(bg, colors_hists)
         # get histograms
         norm_hists = self._normalize_histograms(colors_hists)
         # perform graph-cut
-        graph_cut = self._do_graph_cut((fg_cumulative_hist, bg_cumulative_hist),
-                                       (fg_segments, bg_segments),
-                                       norm_hists,
-                                       neighbors)
-        # segmentation plot
+        graph_cut = self._do_graph_cut((fg_hist, bg_hist), (fg, bg), norm_hists, neighbors)
+        segmask = self._pixels_for_segment_selection(segments, np.nonzero(graph_cut))
+        # store internal variables
+        self.graph_cut = graph_cut
+        self.segmask = segmask
+        self.segments = segments
+        return graph_cut, segmask
+
+    def plot_results(self):
         plt.subplot(1, 2, 2), plt.xticks([]), plt.yticks([])
         plt.title('segmentation')
-        segmask = self._pixels_for_segment_selection(segments, np.nonzero(graph_cut))
-        cv2.imwrite(self.outfile, np.uint8(segmask * 255))
+        segmask = self._pixels_for_segment_selection(self.segments, np.nonzero(self.graph_cut))
         plt.imshow(segmask)
         # SLIC + markings plot
         plt.subplot(1, 2, 1), plt.xticks([]), plt.yticks([])
-        img = mark_boundaries(img, segments)
+        img = mark_boundaries(self.img, self.segments)
         img[self.seeds[:, :, 0] != 255] = (1, 0, 0)
         img[self.seeds[:, :, 2] != 255] = (0, 0, 1)
         plt.imshow(img)

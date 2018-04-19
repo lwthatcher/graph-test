@@ -75,13 +75,14 @@ if __name__ == '__main__':
     # user-defined seeds
     seed_drawer = DrawingInterface(img)
     seeds = seed_drawer.run()
-    # TODO: fix seed counts
-    print('collected seeds:', np.count_nonzero(seeds[:,:,0]), np.count_nonzero(seeds[:,:,2]))
     # specify output files
     _name = args.image.split('.')[0]
     _outfile = os.path.join(*_path, _name + '_segmentation.png')
-    # start the graph-cut segmentation
-    d_args = vars(args)
-    gc = SuperPixelCut(img, seeds, _outfile, **d_args)
-    gc.segment()
+    # cut method
+    kwargs = vars(args)
+    cut = SuperPixelCut(img, seeds, _outfile, **kwargs)
+    segments, mask = cut.segment()
+    # save/show results
+    cut.save_segmentation(mask)
+    cut.plot_results()
     print('segmentation complete')
