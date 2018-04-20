@@ -24,18 +24,18 @@ idx = np.vstack((xv.flatten(), yv.flatten())).T
 
 print('IDX', idx.shape)
 
-fig = plt.figure(figsize=(10, 5))
+fig = plt.figure(figsize=(24, 10))
 axcolor = 'lightgoldenrodyellow'
-ax1 = plt.subplot2grid((3, 5), (0, 0), facecolor=axcolor)
-ax2 = plt.subplot2grid((3, 5), (0, 1), rowspan=3, colspan=2)
-ax3 = plt.subplot2grid((3, 5), (0, 3), rowspan=3, colspan=2)
+ax1 = plt.subplot2grid((3, 3), (0, 0), facecolor=axcolor)
+ax2 = plt.subplot2grid((3, 3), (0, 1), rowspan=3, colspan=2)
+# ax3 = plt.subplot2grid((3, 5), (0, 3), rowspan=3, colspan=2)
 ax4 = plt.subplot2grid((3,5), (1, 0), facecolor=axcolor)
 
 ax2.set_xticks([]), ax2.set_yticks([])
-ax3.set_xticks([]), ax3.set_yticks([])
+# ax3.set_xticks([]), ax3.set_yticks([])
 
-_img = ax2.imshow(img)
-_msk = ax3.imshow(msk, origin='upper', interpolation='nearest')
+_img = ax2.imshow(img, zorder=0, alpha=1.)
+_msk = ax2.imshow(msk, origin='upper', interpolation='nearest', zorder=3, alpha=.5)
 
 rect = None
 
@@ -59,12 +59,12 @@ def line_select_callback(eclick, erelease):
     width, height = max(x1,x2)-x, max(y1,y2)-y
     if rect:
         rect.remove()
-    rect = patches.Rectangle((x,y), width, height, color='blue', visible=True, alpha=.5)
+    rect = patches.Rectangle((x,y), width, height, color='blue', visible=True, fill=False, alpha=.5, zorder=1)
     print('RECT:', rect)
     # add rectangle
-    ax3.add_patch(rect)
-    ax3.draw_artist(rect)
-    fig.canvas.blit(ax3.bbox)
+    ax2.add_patch(rect)
+    ax2.draw_artist(rect)
+    fig.canvas.blit(ax2.bbox)
 
 
 def toggle_selector(event):
