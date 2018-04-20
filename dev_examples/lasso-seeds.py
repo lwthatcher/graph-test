@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import path
 
 
-img = np.asarray(Image.open("img/gymnastics.jpg"))
+img = np.asarray(Image.open("../img/gymnastics.jpg"))
 
 
 fig = plt.figure(figsize=(24, 16))
