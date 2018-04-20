@@ -17,6 +17,7 @@ from matplotlib import path
 
 img = np.asarray(Image.open("../img/gymnastics.jpg"))
 msk = np.ones(img.shape) * 255
+print('IMG', img.shape)
 
 
 xv, yv = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
@@ -38,6 +39,14 @@ _img = ax2.imshow(img)
 _msk = ax3.imshow(msk, origin='upper', interpolation='nearest')
 
 rect = None
+
+def cir(origin, r):
+    a,b = origin
+    global img
+    n0, n1 = img.shape[:-1]
+    y, x = np.ogrid[-a:n0 - a, -b:n1 - b]
+    mask = x * x + y * y <= r * r
+    return mask
 
 
 def line_select_callback(eclick, erelease):
@@ -75,14 +84,26 @@ def radio_callback(label):
         toggle_selector.RS.set_active(True)
         toggle_selector.LL.set_active(False)
         toggle_selector.LR.set_active(False)
+        toggle_selector.DL.set_active(False)
+        toggle_selector.DR.set_active(False)
     elif label == 'lasso':
         toggle_selector.RS.set_active(False)
         toggle_selector.LL.set_active(True)
         toggle_selector.LR.set_active(True)
+        toggle_selector.DL.set_active(False)
+        toggle_selector.DR.set_active(False)
     elif label == 'draw':
         toggle_selector.RS.set_active(False)
         toggle_selector.LL.set_active(False)
         toggle_selector.LR.set_active(False)
+        toggle_selector.DL.set_active(True)
+        toggle_selector.DR.set_active(True)
+    elif label == 'eraser':
+        toggle_selector.RS.set_active(False)
+        toggle_selector.LL.set_active(False)
+        toggle_selector.LR.set_active(False)
+        toggle_selector.DL.set_active(False)
+        toggle_selector.DR.set_active(False)
 
 
 def _update_array(ind, dim):
@@ -92,28 +113,66 @@ def _update_array(ind, dim):
     a,b = ind.T
     xi = channels[channels != dim]
     we = np.meshgrid(a,xi)[1]
-    print('updating', len(msk[b,a,we]))
+    print('updating', msk[b,a,we].shape)
     msk[b, a, we] = 0
+    return msk
+
+
+def _update_msk(m_msk, dim):
+    global msk
+    print('shape', m_msk.shape, msk.shape)
+    print(msk[m_msk, dim].shape, msk[m_msk].shape)
+    channels = np.arange(3)
+    for c in channels:
+        if c != dim:
+            msk[m_msk, c] = 0
     return msk
 
 
 def lasso_callback(dim):
     def onselect(verts):
         p = path.Path(verts)
-        print('p', len(verts))
         ind = p.contains_points(idx, radius=radius)
-        print('contains', len(ind[True]))
+        print('contains', ind[True].shape)
         global msk, _msk
         msk = _update_array(idx[ind], dim)
         _msk.set_data(msk)
         fig.canvas.draw_idle()
     return onselect
 
+
+def draw_callback(dim):
+    def ondraw(verts):
+        # l0 = cir(verts[0], radius)
+        # print('verts', verts[:10])
+        # # print('l0', l0)
+        # print('init l0', (l0 == False).shape, len(verts), np.unique(l0,return_counts=True))
+        # for v in verts[1:]:
+        #     l = cir(v, radius)
+        #     l0 = np.logical_or(l0, l)
+        # print('contains', l0.shape, (l0 == True).shape)
+        # global msk, _msk
+        # msk = _update_msk(l0, dim)
+        # _msk.set_data(msk)
+        _r = [np.sum((idx-v)**2,axis=1) <= radius**2 for v in verts]
+        print('circles', len(_r))
+        ind = np.logical_or.reduce(_r)
+        print('contains', ind[True].shape)
+        global msk, _msk
+        msk = _update_array(idx[ind], dim)
+        _msk.set_data(msk)
+        fig.canvas.draw_idle()
+    return ondraw
+
+
 def update_radius(val):
     print('new brush radius:', val)
     radius = int(val)
     toggle_selector.LL.line.set_linewidth(radius)
     toggle_selector.LR.line.set_linewidth(radius)
+    toggle_selector.DL.line.set_linewidth(radius)
+    toggle_selector.DR.line.set_linewidth(radius)
+
 
 lpl = dict(color='blue', linestyle='-', linewidth=5, alpha=0.5)
 lpr = dict(color='black', linestyle='-', linewidth=5, alpha=0.5)
@@ -130,11 +189,15 @@ toggle_selector.RS = RectangleSelector(ax2, line_select_callback,
                                        spancoords='data', interactive=True)
 toggle_selector.LL = LassoSelector(ax2, lasso_callback(2), lineprops=lpl, button=[1])
 toggle_selector.LR = LassoSelector(ax2, lasso_callback(0), lineprops=lpr, button=[3])
+toggle_selector.DL = LassoSelector(ax2, draw_callback(2), lineprops=lpl, button=[1])
+toggle_selector.DR = LassoSelector(ax2, draw_callback(0), lineprops=lpr, button=[3])
 toggle_selector.LL.set_active(False)
 toggle_selector.LR.set_active(False)
+toggle_selector.DL.set_active(False)
+toggle_selector.DR.set_active(False)
 
 # rax = plt.axes([0.025, 0.5, 0.15, 0.15], facecolor=axcolor)
-radio = RadioButtons(ax1, ('rectangle', 'lasso', 'draw'), active=0)
+radio = RadioButtons(ax1, ('rectangle', 'lasso', 'draw', 'eraser'), active=0)
 radio.on_clicked(radio_callback)
 
 # plt.tight_layout()
