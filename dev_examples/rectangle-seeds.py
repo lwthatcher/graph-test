@@ -16,7 +16,7 @@ from PIL import Image
 from matplotlib import path
 
 img = np.asarray(Image.open("../img/gymnastics.jpg"))
-msk = np.ones(img.shape) * 255
+msk = (np.ones(img.shape) * 255).astype(int)
 print('IMG', img.shape)
 
 
@@ -131,6 +131,7 @@ def _update_msk(m_msk, dim):
 
 def lasso_callback(dim):
     def onselect(verts):
+        global radius
         p = path.Path(verts)
         ind = p.contains_points(idx, radius=radius)
         print('contains', ind[True].shape)
@@ -154,8 +155,9 @@ def draw_callback(dim):
         # global msk, _msk
         # msk = _update_msk(l0, dim)
         # _msk.set_data(msk)
+        global radius
         _r = [np.sum((idx-v)**2,axis=1) <= radius**2 for v in verts]
-        print('circles', len(_r))
+        print('circles', len(_r), 'radius', radius)
         ind = np.logical_or.reduce(_r)
         print('contains', ind[True].shape)
         global msk, _msk
@@ -167,6 +169,7 @@ def draw_callback(dim):
 
 def update_radius(val):
     print('new brush radius:', val)
+    global radius
     radius = int(val)
     toggle_selector.LL.line.set_linewidth(radius)
     toggle_selector.LR.line.set_linewidth(radius)
