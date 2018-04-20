@@ -2,7 +2,7 @@ import os
 import numpy as np
 import argparse
 from PIL import Image
-from draw import DrawingInterface
+from draw import SelectionInterface
 from cuts import SuperPixelCut
 
 
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     print('SOURCE IMAGE:', image_path)
     img = np.asarray(Image.open(image_path))
     # user-defined seeds
-    seed_drawer = DrawingInterface(img)
+    seed_drawer = SelectionInterface(img)
     seeds = seed_drawer.run()
     # specify output files
     _name = args.image.split('.')[0]

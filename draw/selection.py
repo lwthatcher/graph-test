@@ -4,7 +4,7 @@ from matplotlib import path
 from matplotlib.widgets import LassoSelector
 
 
-class DrawingInterface:
+class SelectionInterface:
     def __init__(self, img):
         # setup drawing sub-figure
         self.fig = plt.figure(figsize=(24, 16))

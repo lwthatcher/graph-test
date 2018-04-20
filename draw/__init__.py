@@ -1,2 +1,2 @@
-from .interface import DrawingInterface
-from . import interface
+from .selection import SelectionInterface
+from . import selection
