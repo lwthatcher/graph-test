@@ -1,4 +1,3 @@
-from __future__ import print_function
 """
 Do a mouseclick somewhere, move the mouse to some destination, release
 the button.  This class gives click- and release-events and also draws
@@ -118,17 +117,6 @@ def _update_array(ind, dim):
     return msk
 
 
-def _update_msk(m_msk, dim):
-    global msk
-    print('shape', m_msk.shape, msk.shape)
-    print(msk[m_msk, dim].shape, msk[m_msk].shape)
-    channels = np.arange(3)
-    for c in channels:
-        if c != dim:
-            msk[m_msk, c] = 0
-    return msk
-
-
 def lasso_callback(dim):
     def onselect(verts):
         global radius
@@ -144,17 +132,6 @@ def lasso_callback(dim):
 
 def draw_callback(dim):
     def ondraw(verts):
-        # l0 = cir(verts[0], radius)
-        # print('verts', verts[:10])
-        # # print('l0', l0)
-        # print('init l0', (l0 == False).shape, len(verts), np.unique(l0,return_counts=True))
-        # for v in verts[1:]:
-        #     l = cir(v, radius)
-        #     l0 = np.logical_or(l0, l)
-        # print('contains', l0.shape, (l0 == True).shape)
-        # global msk, _msk
-        # msk = _update_msk(l0, dim)
-        # _msk.set_data(msk)
         global radius
         _r = [np.sum((idx-v)**2,axis=1) <= radius**2 for v in verts]
         print('circles', len(_r), 'radius', radius)
@@ -170,11 +147,11 @@ def draw_callback(dim):
 def update_radius(val):
     print('new brush radius:', val)
     global radius
-    radius = int(val)
-    toggle_selector.LL.line.set_linewidth(radius)
-    toggle_selector.LR.line.set_linewidth(radius)
-    toggle_selector.DL.line.set_linewidth(radius)
-    toggle_selector.DR.line.set_linewidth(radius)
+    radius = val
+    toggle_selector.LL.line.set_linewidth(radius/2)
+    toggle_selector.LR.line.set_linewidth(radius/2)
+    toggle_selector.DL.line.set_linewidth(radius/2)
+    toggle_selector.DR.line.set_linewidth(radius/2)
 
 
 lpl = dict(color='blue', linestyle='-', linewidth=5, alpha=0.5)
@@ -182,7 +159,7 @@ lpr = dict(color='black', linestyle='-', linewidth=5, alpha=0.5)
 
 radius = 5
 
-r_slider = Slider(ax4, 'Brush Radius', 1., 30.0, valstep=1, valinit=radius)
+r_slider = Slider(ax4, 'Brush Radius', 1., 50.0, valstep=1, valinit=radius)
 r_slider.on_changed(update_radius)
 
 # drawtype is 'box' or 'line' or 'none'
