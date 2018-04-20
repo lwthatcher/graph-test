@@ -17,7 +17,7 @@ from PIL import Image
 from matplotlib import path
 
 img = np.asarray(Image.open("../img/gymnastics.jpg"))
-msk = np.zeros(img.shape)
+msk = np.ones(img.shape) * 255
 
 
 xv, yv = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
@@ -25,7 +25,7 @@ idx = np.vstack((xv.flatten(), yv.flatten())).T
 
 print('IDX', idx.shape)
 
-fig = plt.figure(figsize=(24, 16))
+fig = plt.figure(figsize=(10, 5))
 axcolor = 'lightgoldenrodyellow'
 ax1 = plt.subplot2grid((3, 5), (0, 0), facecolor=axcolor)
 ax2 = plt.subplot2grid((3, 5), (0, 1), rowspan=3, colspan=2)
@@ -49,11 +49,14 @@ def line_select_callback(eclick, erelease):
     global rect
     x,y = min(x1,x2), min(y1,y2)
     width, height = max(x1,x2)-x, max(y1,y2)-y
-    rect = patches.Rectangle((x,y), width, height, color='blue', visible=True)
+    if rect:
+        rect.remove()
+    rect = patches.Rectangle((x,y), width, height, color='blue', visible=True, alpha=.5)
     print('RECT:', rect)
     # add rectangle
     ax3.add_patch(rect)
-    fig.canvas.draw_idle()
+    ax3.draw_artist(rect)
+    fig.canvas.blit(ax3.bbox)
 
 
 def toggle_selector(event):
@@ -89,6 +92,7 @@ def _update_array(ind, dim):
     a,b = ind.T
     xi = channels[channels != dim]
     we = np.meshgrid(a,xi)[1]
+    print('updating', len(msk[b,a,we]))
     msk[b, a, we] = 0
     return msk
 
@@ -98,6 +102,7 @@ def lasso_callback(dim):
         p = path.Path(verts)
         print('p', len(verts))
         ind = p.contains_points(idx, radius=5)
+        print('contains', len(ind[True]))
         global msk, _msk
         msk = _update_array(idx[ind], dim)
         _msk.set_data(msk)
@@ -122,6 +127,6 @@ toggle_selector.LR.set_active(False)
 radio = RadioButtons(ax1, ('rectangle', 'lasso', 'draw'), active=0)
 radio.on_clicked(radio_callback)
 
-plt.tight_layout()
+# plt.tight_layout()
 plt.connect('key_press_event', toggle_selector)
 plt.show()
