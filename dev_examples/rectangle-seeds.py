@@ -28,32 +28,20 @@ fig = plt.figure(figsize=(24, 10))
 axcolor = 'lightgoldenrodyellow'
 ax1 = plt.subplot2grid((3, 3), (0, 0), facecolor=axcolor)
 ax2 = plt.subplot2grid((3, 3), (0, 1), rowspan=3, colspan=2)
-# ax3 = plt.subplot2grid((3, 5), (0, 3), rowspan=3, colspan=2)
-ax4 = plt.subplot2grid((3,5), (1, 0), facecolor=axcolor)
+ax4 = plt.subplot2grid((3, 3), (1, 0), facecolor=axcolor)
 
 ax2.set_xticks([]), ax2.set_yticks([])
-# ax3.set_xticks([]), ax3.set_yticks([])
+
 
 _img = ax2.imshow(img, zorder=0, alpha=1.)
 _msk = ax2.imshow(msk, origin='upper', interpolation='nearest', zorder=3, alpha=.5)
 
 rect = None
 
-def cir(origin, r):
-    a,b = origin
-    global img
-    n0, n1 = img.shape[:-1]
-    y, x = np.ogrid[-a:n0 - a, -b:n1 - b]
-    mask = x * x + y * y <= r * r
-    return mask
-
-
 def line_select_callback(eclick, erelease):
     'eclick and erelease are the press and release events'
     x1, y1 = eclick.xdata, eclick.ydata
     x2, y2 = erelease.xdata, erelease.ydata
-    print("(%3.2f, %3.2f) --> (%3.2f, %3.2f)" % (x1, y1, x2, y2))
-    print(" The button you used were: %s %s" % (eclick.button, erelease.button))
     global rect
     x,y = min(x1,x2), min(y1,y2)
     width, height = max(x1,x2)-x, max(y1,y2)-y
@@ -137,7 +125,7 @@ def lasso_callback(dim):
 def draw_callback(dim):
     def ondraw(verts):
         global radius
-        _r = [np.sum((idx-v)**2,axis=1) <= radius**2 for v in verts]
+        _r = [np.sum((idx-v)**2,axis=1) < radius**2 for v in verts]
         print('circles', len(_r), 'radius', radius)
         ind = np.logical_or.reduce(_r)
         global msk, _msk
@@ -149,7 +137,7 @@ def draw_callback(dim):
 
 def erase_callback(verts):
     global radius, msk, _msk
-    _r = [np.sum((idx - v) ** 2, axis=1) <= radius ** 2 for v in verts]
+    _r = [np.sum((idx - v) ** 2, axis=1) < radius ** 2 for v in verts]
     print('circles', len(_r), 'radius', radius)
     ind = np.logical_or.reduce(_r)
     e_mask = ind.reshape(msk.shape[:-1])
@@ -162,11 +150,11 @@ def update_radius(val):
     print('new brush radius:', val)
     global radius
     radius = val
-    toggle_selector.LL.line.set_linewidth(radius/2)
-    toggle_selector.LR.line.set_linewidth(radius/2)
-    toggle_selector.DL.line.set_linewidth(radius/2)
-    toggle_selector.DR.line.set_linewidth(radius/2)
-    toggle_selector.ERASER.line.set_linewidth(radius/2)
+    toggle_selector.LL.line.set_linewidth(radius)
+    toggle_selector.LR.line.set_linewidth(radius)
+    toggle_selector.DL.line.set_linewidth(radius)
+    toggle_selector.DR.line.set_linewidth(radius)
+    toggle_selector.ERASER.line.set_linewidth(radius)
 
 
 lpl = dict(color='blue', linestyle='-', linewidth=5, alpha=0.5)
@@ -175,7 +163,7 @@ lp_eraser = dict(color='white', linestyle='-', linewidth=5, alpha=0.8)
 
 radius = 5
 
-r_slider = Slider(ax4, 'Brush Radius', 1., 50.0, valstep=1, valinit=radius)
+r_slider = Slider(ax4, 'Brush Radius', 1., 30.0, valstep=1, valinit=radius)
 r_slider.on_changed(update_radius)
 
 # drawtype is 'box' or 'line' or 'none'
