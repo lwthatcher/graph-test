@@ -15,8 +15,9 @@ from PIL import Image
 from matplotlib import path
 
 img = np.asarray(Image.open("../img/gymnastics.jpg"))
-msk = (np.ones(img.shape) * 255).astype(int)
-print('IMG', img.shape)
+msk = (np.ones((img.shape[0], img.shape[1], img.shape[2]+1)) * 255).astype(int)
+msk[:,:,3] = 0
+print('IMG', img.shape, msk.shape)
 
 
 xv, yv = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
@@ -105,7 +106,8 @@ def _update_array(ind, dim):
     xi = channels[channels != dim]
     we = np.meshgrid(a,xi)[1]
     print('updating', msk[b,a,we].shape)
-    msk[b, a, we] = 0
+    msk[b, a, we] = 0   # only make dim 255, other 2 color channels to 0
+    msk[b, a, 3] = 255  # only make these spots visible
     return msk
 
 
@@ -141,7 +143,8 @@ def erase_callback(verts):
     print('circles', len(_r), 'radius', radius)
     ind = np.logical_or.reduce(_r)
     e_mask = ind.reshape(msk.shape[:-1])
-    msk[e_mask] = 255
+    msk[e_mask, 0:3] = 255
+    msk[e_mask, 3] = 0
     _msk.set_data(msk)
     fig.canvas.draw_idle()
 
