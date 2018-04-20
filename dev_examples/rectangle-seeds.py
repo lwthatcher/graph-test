@@ -8,11 +8,10 @@ method 'self.ignore()' it is checked whether the button from eventpress
 and eventrelease are the same.
 
 """
-from matplotlib.widgets import RectangleSelector, LassoSelector
+from matplotlib.widgets import RectangleSelector, LassoSelector, RadioButtons, Slider
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from matplotlib.widgets import RadioButtons
 from PIL import Image
 from matplotlib import path
 
@@ -30,6 +29,7 @@ axcolor = 'lightgoldenrodyellow'
 ax1 = plt.subplot2grid((3, 5), (0, 0), facecolor=axcolor)
 ax2 = plt.subplot2grid((3, 5), (0, 1), rowspan=3, colspan=2)
 ax3 = plt.subplot2grid((3, 5), (0, 3), rowspan=3, colspan=2)
+ax4 = plt.subplot2grid((3,5), (1, 0), facecolor=axcolor)
 
 ax2.set_xticks([]), ax2.set_yticks([])
 ax3.set_xticks([]), ax3.set_yticks([])
@@ -101,7 +101,7 @@ def lasso_callback(dim):
     def onselect(verts):
         p = path.Path(verts)
         print('p', len(verts))
-        ind = p.contains_points(idx, radius=5)
+        ind = p.contains_points(idx, radius=radius)
         print('contains', len(ind[True]))
         global msk, _msk
         msk = _update_array(idx[ind], dim)
@@ -109,9 +109,19 @@ def lasso_callback(dim):
         fig.canvas.draw_idle()
     return onselect
 
+def update_radius(val):
+    print('new brush radius:', val)
+    radius = int(val)
+    toggle_selector.LL.line.set_linewidth(radius)
+    toggle_selector.LR.line.set_linewidth(radius)
 
 lpl = dict(color='blue', linestyle='-', linewidth=5, alpha=0.5)
 lpr = dict(color='black', linestyle='-', linewidth=5, alpha=0.5)
+
+radius = 5
+
+r_slider = Slider(ax4, 'Brush Radius', 1., 30.0, valstep=1, valinit=radius)
+r_slider.on_changed(update_radius)
 
 # drawtype is 'box' or 'line' or 'none'
 toggle_selector.RS = RectangleSelector(ax2, line_select_callback,
