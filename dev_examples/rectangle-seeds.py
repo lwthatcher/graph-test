@@ -85,24 +85,28 @@ def radio_callback(label):
         toggle_selector.LR.set_active(False)
         toggle_selector.DL.set_active(False)
         toggle_selector.DR.set_active(False)
+        toggle_selector.ERASER.set_active(False)
     elif label == 'lasso':
         toggle_selector.RS.set_active(False)
         toggle_selector.LL.set_active(True)
         toggle_selector.LR.set_active(True)
         toggle_selector.DL.set_active(False)
         toggle_selector.DR.set_active(False)
+        toggle_selector.ERASER.set_active(False)
     elif label == 'draw':
         toggle_selector.RS.set_active(False)
         toggle_selector.LL.set_active(False)
         toggle_selector.LR.set_active(False)
         toggle_selector.DL.set_active(True)
         toggle_selector.DR.set_active(True)
+        toggle_selector.ERASER.set_active(False)
     elif label == 'eraser':
         toggle_selector.RS.set_active(False)
         toggle_selector.LL.set_active(False)
         toggle_selector.LR.set_active(False)
         toggle_selector.DL.set_active(False)
         toggle_selector.DR.set_active(False)
+        toggle_selector.ERASER.set_active(True)
 
 
 def _update_array(ind, dim):
@@ -136,12 +140,22 @@ def draw_callback(dim):
         _r = [np.sum((idx-v)**2,axis=1) <= radius**2 for v in verts]
         print('circles', len(_r), 'radius', radius)
         ind = np.logical_or.reduce(_r)
-        print('contains', ind[True].shape)
         global msk, _msk
         msk = _update_array(idx[ind], dim)
         _msk.set_data(msk)
         fig.canvas.draw_idle()
     return ondraw
+
+
+def erase_callback(verts):
+    global radius, msk, _msk
+    _r = [np.sum((idx - v) ** 2, axis=1) <= radius ** 2 for v in verts]
+    print('circles', len(_r), 'radius', radius)
+    ind = np.logical_or.reduce(_r)
+    e_mask = ind.reshape(msk.shape[:-1])
+    msk[e_mask] = 255
+    _msk.set_data(msk)
+    fig.canvas.draw_idle()
 
 
 def update_radius(val):
@@ -152,10 +166,12 @@ def update_radius(val):
     toggle_selector.LR.line.set_linewidth(radius/2)
     toggle_selector.DL.line.set_linewidth(radius/2)
     toggle_selector.DR.line.set_linewidth(radius/2)
+    toggle_selector.ERASER.line.set_linewidth(radius/2)
 
 
 lpl = dict(color='blue', linestyle='-', linewidth=5, alpha=0.5)
 lpr = dict(color='black', linestyle='-', linewidth=5, alpha=0.5)
+lp_eraser = dict(color='white', linestyle='-', linewidth=5, alpha=0.8)
 
 radius = 5
 
@@ -171,10 +187,12 @@ toggle_selector.LL = LassoSelector(ax2, lasso_callback(2), lineprops=lpl, button
 toggle_selector.LR = LassoSelector(ax2, lasso_callback(0), lineprops=lpr, button=[3])
 toggle_selector.DL = LassoSelector(ax2, draw_callback(2), lineprops=lpl, button=[1])
 toggle_selector.DR = LassoSelector(ax2, draw_callback(0), lineprops=lpr, button=[3])
+toggle_selector.ERASER = LassoSelector(ax2, erase_callback, lineprops=lp_eraser, button=[1,3])
 toggle_selector.LL.set_active(False)
 toggle_selector.LR.set_active(False)
 toggle_selector.DL.set_active(False)
 toggle_selector.DR.set_active(False)
+toggle_selector.ERASER.set_active(False)
 
 # rax = plt.axes([0.025, 0.5, 0.15, 0.15], facecolor=axcolor)
 radio = RadioButtons(ax1, ('rectangle', 'lasso', 'draw', 'eraser'), active=0)
