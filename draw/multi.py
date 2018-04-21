@@ -200,8 +200,6 @@ class MultiModalInterface:
         if rect is not None:
             mask[:] = 0  # default to definite background
             x,y,w,h = cls.format_rect(rect)
-            print('RECT', x,y,w,h)
-            print('RANGES', (x, x+w), (y, y+h))
             mask[y:y+h, x:x+w] = 3  # anything in the rectangle might be foreground
         mask[overlay[:, :, 2] != 255] = 0  # definite BACKGROUND pixels
         mask[overlay[:, :, 0] != 255] = 1  # definite FOREGROUND pixels

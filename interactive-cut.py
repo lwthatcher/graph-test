@@ -36,19 +36,14 @@ if __name__ == '__main__':
         bgdModel = np.zeros((1, 65), np.float64)
         fgdModel = np.zeros((1, 65), np.float64)
         # if rectangle present, start with that
-        if has_rect:
-            print('original mask')
-            plt.imshow(mask), plt.colorbar(ticks=[0, 1, 2, 3]), plt.show()
+        if has_rect and not has_mask:
             print('Initialization with Rectangle:')
             rect_mask = np.zeros(img.shape[:2], np.uint8)
             cv.grabCut(img, rect_mask, rect, bgdModel, fgdModel, args.iters, mode=cv.GC_INIT_WITH_RECT)
-            plt.imshow(rect_mask), plt.colorbar(ticks=[0, 1, 2, 3]), plt.show()
             rect_mask[mask == 0] = 0
             rect_mask[mask == 1] = 1
             print(np.unique(rect_mask), rect_mask.dtype)
             mask = rect_mask
-            print('after initialization from rect')
-            plt.imshow(mask), plt.colorbar(ticks=[0, 1, 2, 3]), plt.show()
         if has_mask:
             print('Initialization with Mask:')
             cv.grabCut(img, mask, rect, bgdModel, fgdModel, args.iters, mode=cv.GC_INIT_WITH_MASK)
