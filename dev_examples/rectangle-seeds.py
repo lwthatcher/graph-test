@@ -82,7 +82,7 @@ def radio_callback(label):
         toggle_selector.DL.set_active(False)
         toggle_selector.DR.set_active(False)
         toggle_selector.ERASER.set_active(False)
-    elif label == 'draw':
+    elif label == 'interface':
         toggle_selector.RS.set_active(False)
         toggle_selector.LL.set_active(False)
         toggle_selector.LR.set_active(False)
@@ -186,7 +186,7 @@ toggle_selector.DR.set_active(False)
 toggle_selector.ERASER.set_active(False)
 
 # rax = plt.axes([0.025, 0.5, 0.15, 0.15], facecolor=axcolor)
-radio = RadioButtons(ax1, ('rectangle', 'lasso', 'draw', 'eraser'), active=0)
+radio = RadioButtons(ax1, ('rectangle', 'lasso', 'interface', 'eraser'), active=0)
 radio.on_clicked(radio_callback)
 
 # plt.tight_layout()

@@ -40,7 +40,7 @@ class MultiModalInterface:
         self._rects = [None for _ in imgs]
         self.toggle_selector = ToggleSelector(self._toggle_selector)
         self.slider = Slider(self.ax_slider, 'Brush Radius', 1., 30.0, valstep=1, valinit=self.radius)
-        self.radio = RadioButtons(self.ax_brushes, ('rectangle', 'lasso', 'draw', 'eraser'), active=0)
+        self.radio = RadioButtons(self.ax_brushes, ('rectangle', 'lasso', 'interface', 'eraser'), active=0)
         self.navs = RadioButtons(self.ax_nav, [str(i) for i in range(len(imgs))], active=0)
         # drawing layers
         self._img = self.ax_img.imshow(self.img, zorder=0, alpha=1.)
@@ -225,8 +225,8 @@ class ToggleSelector:
         return [(self.RS, 'rectangle'),
                 (self.LL, 'lasso'),
                 (self.LR, 'lasso'),
-                (self.DL, 'draw'),
-                (self.DR, 'draw'),
+                (self.DL, 'interface'),
+                (self.DR, 'interface'),
                 (self.ERASER, 'eraser')]
 
     def set_active(self, label):

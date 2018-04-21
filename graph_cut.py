@@ -2,7 +2,7 @@ import os
 import numpy as np
 import argparse
 from PIL import Image
-from draw import SelectionInterface
+from interface import SelectionInterface
 from cuts import SuperPixelCut
 
 

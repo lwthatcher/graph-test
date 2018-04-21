@@ -4,7 +4,7 @@ import numpy as np
 import cv2 as cv
 from matplotlib import pyplot as plt
 from PIL import Image
-from draw import MultiModalInterface
+from interface import MultiModalInterface
 
 
 def get_image(_img, path):
@@ -50,6 +50,6 @@ if __name__ == '__main__':
         # inferred masked image
         mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
         img = img * mask2[:, :, np.newaxis]
-        # draw
+        # interface
         plt.imshow(img), plt.show()
         # plt.imshow(mask), plt.colorbar(ticks=[0,1,2,3]), plt.show()
