@@ -90,7 +90,7 @@ class MultiModalInterface:
         plt.connect('key_press_event', toggle_selector)
         plt.show()
         # noinspection PyTypeChecker
-        return zip([self.format_rect(r) for r in self._rects], [self.format_mask(o) for o in self._overlays])
+        return [(self.format_rect(r), self.format_mask(o, r)) for r, o in zip(self._rects, self._overlays)]
     # endregion
 
     # region Callbacks
@@ -194,9 +194,15 @@ class MultiModalInterface:
         result = rect.get_x(), rect.get_y(), rect.get_width(), rect.get_height()
         return tuple(int(d) for d in result)
 
-    @staticmethod
-    def format_mask(overlay):
+    @classmethod
+    def format_mask(cls, overlay, rect=None):
         mask = np.ones(overlay.shape[:2], np.uint8) * 3  # set all unmarked as possible foreground
+        if rect is not None:
+            mask[:] = 0  # default to definite background
+            x,y,w,h = cls.format_rect(rect)
+            print('RECT', x,y,w,h)
+            print('RANGES', (x, x+w), (y, y+h))
+            mask[y:y+h, x:x+w] = 3  # anything in the rectangle might be foreground
         mask[overlay[:, :, 2] != 255] = 0  # definite BACKGROUND pixels
         mask[overlay[:, :, 0] != 255] = 1  # definite FOREGROUND pixels
         return mask
