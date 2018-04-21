@@ -9,10 +9,10 @@ from matplotlib import path
 
 class MultiModalInterface:
     # region Constructor
-    def __init__(self, imgs, masks=()):
+    def __init__(self, imgs, masks=None):
         self._i = 0
         self._imgs = imgs
-        self._overlays = [self._new_overlay() for _ in imgs]
+        self._overlays = [self._mask_to_overlay(mask) for mask in self._as_array(masks)]
         print("Images", len(imgs), self.img.shape, self.overlay.shape)
         # misc variables/constants
         self.channels = np.arange(3)
@@ -178,11 +178,23 @@ class MultiModalInterface:
     # endregion
 
     # region Helper Methods
+    def _as_array(self, masks):
+        if masks is None:
+            masks = [None for _ in self._imgs]
+        return masks
+
     def _new_overlay(self):
         shape = np.array(self.img.shape)
         shape[2] += 1
         overlay = (np.ones(shape) * 255).astype(int)
         overlay[:, :, 3] = 0
+        return overlay
+
+    def _mask_to_overlay(self, mask):
+        overlay = self._new_overlay()
+        if mask is not None:
+            overlay[(mask==1) | (mask==3)] = (0,0,255,255)
+        # for now, don't transfer background
         return overlay
     # endregion
 
