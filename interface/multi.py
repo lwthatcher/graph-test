@@ -85,7 +85,7 @@ class MultiModalInterface:
         # link additional call-backs
         self.radio.on_clicked(self.on_change_brush)
         self.navs.on_clicked(self.on_nav)
-        self.slider.on_changed(self._update_radius)
+        self.slider.on_changed(self.on_change_radius)
         # start
         plt.connect('key_press_event', toggle_selector)
         plt.show()
@@ -111,6 +111,11 @@ class MultiModalInterface:
     def on_change_brush(self, label):
         print('mode:', label)
         self.toggle_selector.set_active(label)
+
+    def on_change_radius(self, val):
+        print('new brush radius:', val)
+        self.radius = val
+        self.toggle_selector.update_width(self.radius)
 
     def on_lasso(self, dim):
         def onselect(verts):
@@ -153,11 +158,6 @@ class MultiModalInterface:
     # endregion
 
     # region Update Methods
-    def _update_radius(self, val):
-        print('new brush radius:', val)
-        self.radius = val
-        self.toggle_selector.update_width(self.radius)
-
     def _update_array(self, ind, dim):
         """draws the red or blue seeds with invisible background"""
         a, b = ind.T
