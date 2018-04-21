@@ -60,7 +60,7 @@ class MultiModalInterface:
         # start
         plt.connect('key_press_event', toggle_selector)
         plt.show()
-        return self.rect, self.seeds
+        return self.format_rect(), self.format_mask()
     # endregion
 
     # region Callbacks
@@ -111,7 +111,7 @@ class MultiModalInterface:
         self.fig.canvas.draw_idle()
     # endregion
 
-    # region Helper Functions
+    # region Update Methods
     def _update_radius(self, val):
         print('new brush radius:', val)
         self.radius = val
@@ -134,6 +134,20 @@ class MultiModalInterface:
             self.rect.remove()
             self.rect = None
             self.fig.canvas.draw_idle()
+    # endregion
+
+    # Format Methods
+    def format_rect(self):
+        if self.rect is None:
+            return None
+        result = self.rect.get_x(), self.rect.get_y(), self.rect.get_width(), self.rect.get_height()
+        return tuple(int(d) for d in result)
+
+    def format_mask(self):
+        mask = np.ones(self.img.shape[:2], np.uint8) * 3  # set all unmarked as possible foreground..?
+        mask[self.seeds[:, :, 2] != 255] = 0  # definite BACKGROUND pixels
+        mask[self.seeds[:, :, 0] != 255] = 1  # definite FOREGROUND pixels
+        return mask
     # endregion
 
 
