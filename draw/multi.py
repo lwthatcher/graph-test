@@ -43,8 +43,8 @@ class MultiModalInterface:
 
     # region Public Methods
     def run(self):
-        rs_kwargs = {'drawtype':'box', 'useblit':True,'button':[1], 'minspanx':5, 'minspany':5,
-                     'spancoords':'data', 'interactive':True}
+        rs_kwargs = {'drawtype': 'box', 'useblit': True, 'button': [1], 'minspanx': 5, 'minspany': 5,
+                     'spancoords': 'pixels', 'interactive': True}
         # setup selectors
         toggle_selector = self.toggle_selector
         toggle_selector.RS = RectangleSelector(self.ax2, self._rect_callback, **rs_kwargs)
@@ -60,6 +60,7 @@ class MultiModalInterface:
         # start
         plt.connect('key_press_event', toggle_selector)
         plt.show()
+        return self.rect, self.seeds
     # endregion
 
     # region Callbacks

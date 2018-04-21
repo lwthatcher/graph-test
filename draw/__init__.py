@@ -1,2 +1,3 @@
 from .selection import SelectionInterface
-from . import selection
+from .multi import MultiModalInterface
+from . import selection, multi
