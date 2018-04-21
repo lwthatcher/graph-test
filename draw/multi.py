@@ -2,6 +2,7 @@ from matplotlib.widgets import RectangleSelector, LassoSelector, RadioButtons, S
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import matplotlib.gridspec as gridspec
 from PIL import Image
 from matplotlib import path
 
@@ -27,9 +28,14 @@ class MultiModalInterface:
         # initialize figures and axes
         tool_color = 'deepskyblue'
         self.fig = plt.figure(1, figsize=(24, 10))
-        self.ax1 = plt.subplot2grid((3, 3), (0, 0), facecolor=tool_color)
-        self.ax2 = plt.subplot2grid((3, 3), (0, 1), rowspan=3, colspan=2)
-        self.ax4 = plt.subplot2grid((3, 3), (1, 0), facecolor=tool_color)
+
+        gs = gridspec.GridSpec(2, 2,
+                               width_ratios=[1, 4],
+                               height_ratios=[1, 1])
+        self.ax1 = plt.subplot(gs[0,0], facecolor=tool_color)
+        self.ax2 = plt.subplot(gs[:,1])
+        self.ax4 = plt.subplot(gs[1,0], facecolor=tool_color)
+
         self.ax2.set_xticks([]), self.ax2.set_yticks([])
         # additional components
         self.rect = None
