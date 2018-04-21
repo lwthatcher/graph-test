@@ -31,15 +31,17 @@ class MultiModalInterface:
         gs = gridspec.GridSpec(3, 3,
                                width_ratios=[1, 1, 8],
                                height_ratios=[2, 1, 1])
-        self.ax_brushes = plt.subplot(gs[0, 0:2], facecolor=tool_color)
+        self.ax_brushes = plt.subplot(gs[0, :2], facecolor=tool_color)
         self.ax_img = plt.subplot(gs[:, 2])
         self.ax_img.set_xticks([]), self.ax_img.set_yticks([])
-        self.ax_slider = plt.subplot(gs[1, 0:2], facecolor=tool_color)
+        self.ax_slider = plt.subplot(gs[1, :2], facecolor=tool_color)
+        self.ax_nav = plt.subplot(gs[2, :2], facecolor=tool_color)
         # additional components
-        self.rect = None
+        self._rects = [None for _ in imgs]
         self.toggle_selector = ToggleSelector(self._toggle_selector)
         self.slider = Slider(self.ax_slider, 'Brush Radius', 1., 30.0, valstep=1, valinit=self.radius)
         self.radio = RadioButtons(self.ax_brushes, ('rectangle', 'lasso', 'draw', 'eraser'), active=0)
+        self.navs = RadioButtons(self.ax_nav, [str(i) for i in range(len(imgs))], active=0)
         # drawing layers
         self._img = self.ax_img.imshow(self.img, zorder=0, alpha=1.)
         self._msk = self.ax_img.imshow(self.overlay, origin='upper', interpolation='nearest', zorder=3, alpha=.5)
@@ -57,6 +59,14 @@ class MultiModalInterface:
     @overlay.setter
     def overlay(self, value):
         self._overlays[self._i] = value
+
+    @property
+    def rect(self):
+        return self._rects[self._i]
+
+    @rect.setter
+    def rect(self, value):
+        self._rects[self._i] = value
     # endregion
 
     # region Public Methods
@@ -74,11 +84,13 @@ class MultiModalInterface:
         toggle_selector.set_active('rectangle')
         # link additional call-backs
         self.radio.on_clicked(self.on_change_brush)
+        self.navs.on_clicked(self.on_nav)
         self.slider.on_changed(self._update_radius)
         # start
         plt.connect('key_press_event', toggle_selector)
         plt.show()
-        return self.format_rect(), self.format_mask()
+        # noinspection PyTypeChecker
+        return zip([self.format_rect(r) for r in self._rects], [self.format_mask(o) for o in self._overlays])
     # endregion
 
     # region Callbacks
@@ -127,6 +139,17 @@ class MultiModalInterface:
         self.overlay[e_mask, 3] = 0
         self._msk.set_data(self.overlay)
         self.fig.canvas.draw_idle()
+
+    def on_nav(self, i):
+        i = int(i)
+        print('selecting image', i)
+        self._i = i
+        self._img.set_data(self.img)
+        self._msk.set_data(self.overlay)
+        for j, rect in enumerate(self._rects):
+            if rect is not None:
+                rect.set_visible(j == i)
+        self.fig.canvas.draw_idle()
     # endregion
 
     # region Update Methods
@@ -164,16 +187,18 @@ class MultiModalInterface:
     # endregion
 
     # Format Methods
-    def format_rect(self):
-        if self.rect is None:
+    @staticmethod
+    def format_rect(rect):
+        if rect is None:
             return None
-        result = self.rect.get_x(), self.rect.get_y(), self.rect.get_width(), self.rect.get_height()
+        result = rect.get_x(), rect.get_y(), rect.get_width(), rect.get_height()
         return tuple(int(d) for d in result)
 
-    def format_mask(self):
-        mask = np.ones(self.img.shape[:2], np.uint8) * 3  # set all unmarked as possible foreground..?
-        mask[self.overlay[:, :, 2] != 255] = 0  # definite BACKGROUND pixels
-        mask[self.overlay[:, :, 0] != 255] = 1  # definite FOREGROUND pixels
+    @staticmethod
+    def format_mask(overlay):
+        mask = np.ones(overlay.shape[:2], np.uint8) * 3  # set all unmarked as possible foreground
+        mask[overlay[:, :, 2] != 255] = 0  # definite BACKGROUND pixels
+        mask[overlay[:, :, 0] != 255] = 1  # definite FOREGROUND pixels
         return mask
     # endregion
 
