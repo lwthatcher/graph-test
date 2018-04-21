@@ -40,7 +40,7 @@ class MultiModalInterface:
         self._rects = [None for _ in imgs]
         self.toggle_selector = ToggleSelector(self._toggle_selector)
         self.slider = Slider(self.ax_slider, 'Brush Radius', 1., 30.0, valstep=1, valinit=self.radius)
-        self.radio = RadioButtons(self.ax_brushes, ('rectangle', 'lasso', 'interface', 'eraser'), active=0)
+        self.radio = RadioButtons(self.ax_brushes, ('rectangle', 'lasso', 'draw', 'eraser'), active=0)
         self.navs = RadioButtons(self.ax_nav, [str(i) for i in range(len(imgs))], active=0)
         # drawing layers
         self._img = self.ax_img.imshow(self.img, zorder=0, alpha=1.)
@@ -163,7 +163,7 @@ class MultiModalInterface:
         a, b = ind.T
         xi = self.channels[self.channels != dim]
         we = np.meshgrid(a, xi)[1]
-        print('updating', self.overlay[b, a, we].shape)
+        print('updating', self.overlay[b, a, we].shape, self.overlay[b,a].shape, len(a), len(b), len(we))
         self.overlay[b, a, we] = 0  # only make dim 255, other 2 color channels to 0
         self.overlay[b, a, 3] = 255  # only make these spots visible
         return self.overlay
@@ -237,8 +237,8 @@ class ToggleSelector:
         return [(self.RS, 'rectangle'),
                 (self.LL, 'lasso'),
                 (self.LR, 'lasso'),
-                (self.DL, 'interface'),
-                (self.DR, 'interface'),
+                (self.DL, 'draw'),
+                (self.DR, 'draw'),
                 (self.ERASER, 'eraser')]
 
     def set_active(self, label):
