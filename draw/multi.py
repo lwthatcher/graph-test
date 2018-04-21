@@ -12,12 +12,13 @@ class MultiModalInterface:
     def __init__(self, img):
         self.img = img
         # seeds mask
-        self.seeds = (np.ones((img.shape[0], img.shape[1], img.shape[2] + 1)) * 255).astype(int)
-        self.seeds[:, :, 3] = 0
-        print("Image shape", img.shape, self.seeds.shape)
+        self.overlay = (np.ones((img.shape[0], img.shape[1], img.shape[2] + 1)) * 255).astype(int)
+        self.overlay[:, :, 3] = 0
+        print("Image shape", img.shape, self.overlay.shape)
         # misc variables/constants
         self.channels = np.arange(3)
         self.radius = 5
+        tool_color = 'deepskyblue'
         # pixel indices
         xv, yv = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
         self.idx = np.vstack((xv.flatten(), yv.flatten())).T
@@ -25,26 +26,24 @@ class MultiModalInterface:
         self.lpl = dict(color='blue', linestyle='-', linewidth=5, alpha=0.5)
         self.lpr = dict(color='black', linestyle='-', linewidth=5, alpha=0.5)
         self.lp_eraser = dict(color='white', linestyle='-', linewidth=5, alpha=0.8)
-        # initialize figures and axes
-        tool_color = 'deepskyblue'
+        # specify figure
         self.fig = plt.figure(1, figsize=(24, 10))
-
-        gs = gridspec.GridSpec(2, 2,
-                               width_ratios=[1, 4],
-                               height_ratios=[1, 1])
-        self.ax1 = plt.subplot(gs[0,0], facecolor=tool_color)
-        self.ax2 = plt.subplot(gs[:,1])
-        self.ax4 = plt.subplot(gs[1,0], facecolor=tool_color)
-
-        self.ax2.set_xticks([]), self.ax2.set_yticks([])
+        # setup axes
+        gs = gridspec.GridSpec(3, 3,
+                               width_ratios=[1, 1, 8],
+                               height_ratios=[2, 1, 1])
+        self.ax_brushes = plt.subplot(gs[0, 0:2], facecolor=tool_color)
+        self.ax_img = plt.subplot(gs[:, 2])
+        self.ax_img.set_xticks([]), self.ax_img.set_yticks([])
+        self.ax_slider = plt.subplot(gs[1, 0:2], facecolor=tool_color)
         # additional components
         self.rect = None
         self.toggle_selector = ToggleSelector(self._toggle_selector)
-        self.r_slider = Slider(self.ax4, 'Brush Radius', 1., 30.0, valstep=1, valinit=self.radius)
-        self.radio = RadioButtons(self.ax1, ('rectangle', 'lasso', 'draw', 'eraser'), active=0)
+        self.slider = Slider(self.ax_slider, 'Brush Radius', 1., 30.0, valstep=1, valinit=self.radius)
+        self.radio = RadioButtons(self.ax_brushes, ('rectangle', 'lasso', 'draw', 'eraser'), active=0)
         # drawing layers
-        self._img = self.ax2.imshow(img, zorder=0, alpha=1.)
-        self._msk = self.ax2.imshow(self.seeds, origin='upper', interpolation='nearest', zorder=3, alpha=.5)
+        self._img = self.ax_img.imshow(img, zorder=0, alpha=1.)
+        self._msk = self.ax_img.imshow(self.overlay, origin='upper', interpolation='nearest', zorder=3, alpha=.5)
     # endregion
 
     # region Public Methods
@@ -53,16 +52,16 @@ class MultiModalInterface:
                      'spancoords': 'pixels', 'interactive': True}
         # setup selectors
         toggle_selector = self.toggle_selector
-        toggle_selector.RS = RectangleSelector(self.ax2, self._rect_callback, **rs_kwargs)
-        toggle_selector.LL = LassoSelector(self.ax2, self._lasso_callback(2), lineprops=self.lpl, button=[1])
-        toggle_selector.LR = LassoSelector(self.ax2, self._lasso_callback(0), lineprops=self.lpr, button=[3])
-        toggle_selector.DL = LassoSelector(self.ax2, self._draw_callback(2), lineprops=self.lpl, button=[1])
-        toggle_selector.DR = LassoSelector(self.ax2, self._draw_callback(0), lineprops=self.lpr, button=[3])
-        toggle_selector.ERASER = LassoSelector(self.ax2, self._erase_callback, lineprops=self.lp_eraser, button=[1, 3])
+        toggle_selector.RS = RectangleSelector(self.ax_img, self.on_rect, **rs_kwargs)
+        toggle_selector.LL = LassoSelector(self.ax_img, self.on_lasso(2), lineprops=self.lpl, button=[1])
+        toggle_selector.LR = LassoSelector(self.ax_img, self.on_lasso(0), lineprops=self.lpr, button=[3])
+        toggle_selector.DL = LassoSelector(self.ax_img, self.on_draw(2), lineprops=self.lpl, button=[1])
+        toggle_selector.DR = LassoSelector(self.ax_img, self.on_draw(0), lineprops=self.lpr, button=[3])
+        toggle_selector.ERASER = LassoSelector(self.ax_img, self.on_erase, lineprops=self.lp_eraser, button=[1, 3])
         toggle_selector.set_active('rectangle')
         # link additional call-backs
-        self.radio.on_clicked(self._radio_callback)
-        self.r_slider.on_changed(self._update_radius)
+        self.radio.on_clicked(self.on_change_brush)
+        self.slider.on_changed(self._update_radius)
         # start
         plt.connect('key_press_event', toggle_selector)
         plt.show()
@@ -70,7 +69,7 @@ class MultiModalInterface:
     # endregion
 
     # region Callbacks
-    def _rect_callback(self, eclick, erelease):
+    def on_rect(self, eclick, erelease):
         'eclick and erelease are the press and release events'
         x1, y1 = eclick.xdata, eclick.ydata
         x2, y2 = erelease.xdata, erelease.ydata
@@ -80,40 +79,40 @@ class MultiModalInterface:
             self.rect.remove()
         self.rect = patches.Rectangle((x, y), w, h, color='blue', visible=True, fill=False, alpha=.5, zorder=1)
         # add rectangle
-        self.ax2.add_patch(self.rect)
-        self.ax2.draw_artist(self.rect)
-        self.fig.canvas.blit(self.ax2.bbox)
+        self.ax_img.add_patch(self.rect)
+        self.ax_img.draw_artist(self.rect)
+        self.fig.canvas.blit(self.ax_img.bbox)
 
-    def _radio_callback(self, label):
+    def on_change_brush(self, label):
         print('mode:', label)
         self.toggle_selector.set_active(label)
 
-    def _lasso_callback(self, dim):
+    def on_lasso(self, dim):
         def onselect(verts):
             p = path.Path(verts)
             ind = p.contains_points(self.idx, radius=self.radius)
-            self.seeds = self._update_array(self.idx[ind], dim)
-            self._msk.set_data(self.seeds)
+            self.overlay = self._update_array(self.idx[ind], dim)
+            self._msk.set_data(self.overlay)
             self.fig.canvas.draw_idle()
 
         return onselect
 
-    def _draw_callback(self, dim):
+    def on_draw(self, dim):
         def ondraw(verts):
             _r = [np.sum((self.idx - v) ** 2, axis=1) < self.radius ** 2 for v in verts]
             ind = np.logical_or.reduce(_r)
-            self.seeds = self._update_array(self.idx[ind], dim)
-            self._msk.set_data(self.seeds)
+            self.overlay = self._update_array(self.idx[ind], dim)
+            self._msk.set_data(self.overlay)
             self.fig.canvas.draw_idle()
         return ondraw
 
-    def _erase_callback(self, verts):
+    def on_erase(self, verts):
         _r = [np.sum((self.idx - v) ** 2, axis=1) < self.radius ** 2 for v in verts]
         ind = np.logical_or.reduce(_r)
-        e_mask = ind.reshape(self.seeds.shape[:-1])
-        self.seeds[e_mask, 0:3] = 255
-        self.seeds[e_mask, 3] = 0
-        self._msk.set_data(self.seeds)
+        e_mask = ind.reshape(self.overlay.shape[:-1])
+        self.overlay[e_mask, 0:3] = 255
+        self.overlay[e_mask, 3] = 0
+        self._msk.set_data(self.overlay)
         self.fig.canvas.draw_idle()
     # endregion
 
@@ -128,10 +127,10 @@ class MultiModalInterface:
         a, b = ind.T
         xi = self.channels[self.channels != dim]
         we = np.meshgrid(a, xi)[1]
-        print('updating', self.seeds[b, a, we].shape)
-        self.seeds[b, a, we] = 0  # only make dim 255, other 2 color channels to 0
-        self.seeds[b, a, 3] = 255  # only make these spots visible
-        return self.seeds
+        print('updating', self.overlay[b, a, we].shape)
+        self.overlay[b, a, we] = 0  # only make dim 255, other 2 color channels to 0
+        self.overlay[b, a, 3] = 255  # only make these spots visible
+        return self.overlay
 
     def _toggle_selector(self, event):
         print(' Key pressed.', event.key)
@@ -151,8 +150,8 @@ class MultiModalInterface:
 
     def format_mask(self):
         mask = np.ones(self.img.shape[:2], np.uint8) * 3  # set all unmarked as possible foreground..?
-        mask[self.seeds[:, :, 2] != 255] = 0  # definite BACKGROUND pixels
-        mask[self.seeds[:, :, 0] != 255] = 1  # definite FOREGROUND pixels
+        mask[self.overlay[:, :, 2] != 255] = 0  # definite BACKGROUND pixels
+        mask[self.overlay[:, :, 0] != 255] = 1  # definite FOREGROUND pixels
         return mask
     # endregion
 
