@@ -19,7 +19,7 @@ if __name__ == '__main__':
     print('SOURCE IMAGE:', image_path)
     img = np.asarray(Image.open(image_path))
     # open interface
-    interface = MultiModalInterface(img)
+    interface = MultiModalInterface([img])
     rect, mask = interface.run()
     has_rect, has_mask = rect is not None, 0 in np.unique(mask) or 1 in np.unique(mask)
     print('rect', rect)

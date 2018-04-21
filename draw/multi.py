@@ -9,18 +9,17 @@ from matplotlib import path
 
 class MultiModalInterface:
     # region Constructor
-    def __init__(self, img):
-        self.img = img
-        # seeds mask
-        self.overlay = (np.ones((img.shape[0], img.shape[1], img.shape[2] + 1)) * 255).astype(int)
-        self.overlay[:, :, 3] = 0
-        print("Image shape", img.shape, self.overlay.shape)
+    def __init__(self, imgs, masks=()):
+        self._i = 0
+        self._imgs = imgs
+        self._overlays = [self._new_overlay() for _ in imgs]
+        print("Images", len(imgs), self.img.shape, self.overlay.shape)
         # misc variables/constants
         self.channels = np.arange(3)
         self.radius = 5
         tool_color = 'deepskyblue'
         # pixel indices
-        xv, yv = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
+        xv, yv = np.meshgrid(np.arange(self.img.shape[1]), np.arange(self.img.shape[0]))
         self.idx = np.vstack((xv.flatten(), yv.flatten())).T
         # line formats
         self.lpl = dict(color='blue', linestyle='-', linewidth=5, alpha=0.5)
@@ -42,8 +41,22 @@ class MultiModalInterface:
         self.slider = Slider(self.ax_slider, 'Brush Radius', 1., 30.0, valstep=1, valinit=self.radius)
         self.radio = RadioButtons(self.ax_brushes, ('rectangle', 'lasso', 'draw', 'eraser'), active=0)
         # drawing layers
-        self._img = self.ax_img.imshow(img, zorder=0, alpha=1.)
+        self._img = self.ax_img.imshow(self.img, zorder=0, alpha=1.)
         self._msk = self.ax_img.imshow(self.overlay, origin='upper', interpolation='nearest', zorder=3, alpha=.5)
+    # endregion
+
+    # region Property Accessors
+    @property
+    def img(self):
+        return self._imgs[self._i]
+
+    @property
+    def overlay(self):
+        return self._overlays[self._i]
+
+    @overlay.setter
+    def overlay(self, value):
+        self._overlays[self._i] = value
     # endregion
 
     # region Public Methods
@@ -141,6 +154,15 @@ class MultiModalInterface:
             self.fig.canvas.draw_idle()
     # endregion
 
+    # region Helper Methods
+    def _new_overlay(self):
+        shape = np.array(self.img.shape)
+        shape[2] += 1
+        overlay = (np.ones(shape) * 255).astype(int)
+        overlay[:, :, 3] = 0
+        return overlay
+    # endregion
+
     # Format Methods
     def format_rect(self):
         if self.rect is None:
@@ -190,5 +212,5 @@ class ToggleSelector:
 
 if __name__ == "__main__":
     img = np.asarray(Image.open("../img/gymnastics.jpg"))
-    interface = MultiModalInterface(img)
+    interface = MultiModalInterface([img])
     interface.run()
