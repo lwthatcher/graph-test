@@ -1,4 +1,4 @@
-from matplotlib.widgets import RectangleSelector, LassoSelector, RadioButtons, Slider
+from matplotlib.widgets import RectangleSelector, LassoSelector, RadioButtons, Slider, Button
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -9,7 +9,8 @@ from matplotlib import path
 
 BLUE = (0, 0, 255, 255)
 RED = (255, 0, 0, 255)
-GREEN = (0, 255, 0, 200)
+GREEN = (0, 255, 0, 255)
+CLEAR = (255, 255, 255, 0)
 
 
 class MultiModalInterface:
@@ -26,30 +27,37 @@ class MultiModalInterface:
         # pixel indices
         xv, yv = np.meshgrid(np.arange(self.img.shape[1]), np.arange(self.img.shape[0]))
         self.idx = np.vstack((xv.flatten(), yv.flatten())).T
-        # line formats
-        self.lpl = dict(color='blue', linestyle='-', linewidth=5, alpha=0.5)
-        self.lpr = dict(color='black', linestyle='-', linewidth=5, alpha=0.5)
-        self.lp_eraser = dict(color='white', linestyle='-', linewidth=5, alpha=0.8)
         # specify figure
         self.fig = plt.figure(1, figsize=(24, 10))
         # setup axes
-        gs = gridspec.GridSpec(3, 3,
+        gs = gridspec.GridSpec(4, 3,
                                width_ratios=[1, 1, 8],
-                               height_ratios=[2, 1, 1])
+                               height_ratios=[2, 1, 1, 1])
         self.ax_brushes = plt.subplot(gs[0, :2], facecolor=tool_color)
         self.ax_img = plt.subplot(gs[:, 2])
         self.ax_img.set_xticks([]), self.ax_img.set_yticks([])
         self.ax_slider = plt.subplot(gs[1, :2], facecolor=tool_color)
         self.ax_nav = plt.subplot(gs[2, :2], facecolor=tool_color)
+        self.ax_btn1 = plt.subplot(gs[3, 0], facecolor=tool_color)
+        self.ax_btn2 = plt.subplot(gs[3, 1], facecolor=tool_color)
         # additional components
         self._rects = [None for _ in imgs]
         self.toggle_selector = ToggleSelector(self._toggle_selector)
         self.slider = Slider(self.ax_slider, 'Brush Radius', 1., 30.0, valstep=1, valinit=self.radius)
         self.radio = RadioButtons(self.ax_brushes, ('rectangle', 'lasso', 'draw', 'eraser'), active=0)
         self.navs = RadioButtons(self.ax_nav, [str(i) for i in range(len(imgs))], active=0)
+        self.btn1 = Button(self.ax_btn1, 'Transfer Foreground')
+        self.btn2 = Button(self.ax_btn2, 'Hide Potential')
         # drawing layers
         self._img = self.ax_img.imshow(self.img, zorder=0, alpha=1.)
         self._msk = self.ax_img.imshow(self.overlay, origin='upper', interpolation='nearest', zorder=3, alpha=.5)
+        # line formats
+        r_axis = self.ax_img.transData.transform([[5, 0], [10, 0]])
+        self._t = (r_axis[1][0] - r_axis[0][0]) / 5
+        print('AXIS COORDS', r_axis, self._t)
+        self.lpl = dict(color='blue', linestyle='-', linewidth=5*self._t, alpha=0.5)
+        self.lpr = dict(color='black', linestyle='-', linewidth=5*self._t, alpha=0.5)
+        self.lp_eraser = dict(color='white', linestyle='-', linewidth=5*self._t, alpha=0.8)
     # endregion
 
     # region Property Accessors
@@ -91,7 +99,10 @@ class MultiModalInterface:
         self.radio.on_clicked(self.on_change_brush)
         self.navs.on_clicked(self.on_nav)
         self.slider.on_changed(self.on_change_radius)
+        self.btn1.on_clicked(self._transfer_foreground)
+        self.btn2.on_clicked(self._hide_suggestions)
         # start
+
         plt.connect('key_press_event', toggle_selector)
         plt.show()
         # noinspection PyTypeChecker
@@ -118,9 +129,9 @@ class MultiModalInterface:
         self.toggle_selector.set_active(label)
 
     def on_change_radius(self, val):
-        print('new brush radius:', val)
+        print('new brush radius:', val, val*self._t)
         self.radius = val
-        self.toggle_selector.update_width(self.radius)
+        self.toggle_selector.update_width(self.radius*self._t)
 
     def on_lasso(self, dim):
         def onselect(verts):
@@ -202,6 +213,15 @@ class MultiModalInterface:
             overlay[mask==1] = BLUE
             overlay[mask==3] = GREEN
         return overlay
+
+    def _transfer_foreground(self, event):
+        print(np.all(self.overlay==GREEN, axis=-1).shape)
+        print(np.sum(np.all(self.overlay==GREEN, axis=-1)))
+        # self.overlay[self.overlay == GREEN] = BLUE
+
+    def _hide_suggestions(self, event):
+        print((self.overlay[self.overlay == GREEN]).shape)
+        # self.overlay[self.overlay == GREEN] = CLEAR
     # endregion
 
     # region Format Methods
@@ -219,8 +239,8 @@ class MultiModalInterface:
             mask[:] = 0  # default to definite background
             x,y,w,h = cls.format_rect(rect)
             mask[y:y+h, x:x+w] = 3  # anything in the rectangle might be foreground
-        red = (overlay == RED)[...,2]
-        blue = (overlay == BLUE)[...,0]
+        red = np.all(overlay == RED, axis=-1)
+        blue = np.all(overlay == BLUE, axis=-1)
         mask[red] = 0  # definite BACKGROUND pixels
         mask[blue] = 1  # definite FOREGROUND pixels
         return mask
