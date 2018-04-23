@@ -223,8 +223,10 @@ class MultiModalInterface:
             mask[:] = 0  # default to definite background
             x,y,w,h = cls.format_rect(rect)
             mask[y:y+h, x:x+w] = 3  # anything in the rectangle might be foreground
-        mask[overlay[:, :, 2] != 255] = 0  # definite BACKGROUND pixels
-        mask[overlay[:, :, 0] != 255] = 1  # definite FOREGROUND pixels
+        red = (overlay == RED)[...,2]
+        blue = (overlay == BLUE)[...,0]
+        mask[red] = 0  # definite BACKGROUND pixels
+        mask[blue] = 1  # definite FOREGROUND pixels
         return mask
     # endregion
 
