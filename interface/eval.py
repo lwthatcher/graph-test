@@ -1,6 +1,7 @@
 from matplotlib.widgets import Button
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import matplotlib.patches as mpatches
 
 
 class EvaluateCutInterface:
@@ -26,7 +27,15 @@ class EvaluateCutInterface:
 
     def run(self):
         self.ax1.imshow(self.img)
-        self.ax2.imshow(self.mask)
+        im = self.ax2.imshow(self.mask)
+        # legend
+        values = [0, 1, 2, 3]
+        colors = [im.cmap(im.norm(value)) for value in values]
+        # create a patch (proxy artist) for every color
+        patches = [mpatches.Patch(color=colors[i], label="Level {l}".format(l=values[i])) for i in range(len(values))]
+        # put those patched as legend-handles into the legend
+        self.ax2.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+        # add buttons
         btn_accept = Button(self.ax3, 'Accept')
         btn_refine = Button(self.ax4, 'Refine further')
         # callbacks
