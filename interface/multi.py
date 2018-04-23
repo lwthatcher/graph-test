@@ -7,6 +7,11 @@ from PIL import Image
 from matplotlib import path
 
 
+BLUE = (0, 0, 255, 255)
+RED = (255, 0, 0, 255)
+
+
+
 class MultiModalInterface:
     # region Constructor
     def __init__(self, imgs, masks=None):
@@ -161,11 +166,16 @@ class MultiModalInterface:
     def _update_array(self, ind, dim):
         """draws the red or blue seeds with invisible background"""
         a, b = ind.T
-        xi = self.channels[self.channels != dim]
-        we = np.meshgrid(a, xi)[1]
-        print('updating', self.overlay[b, a, we].shape, self.overlay[b,a].shape, len(a), len(b), len(we))
-        self.overlay[b, a, we] = 0  # only make dim 255, other 2 color channels to 0
-        self.overlay[b, a, 3] = 255  # only make these spots visible
+        if dim == 0:
+            color = RED
+        else:
+            color = BLUE
+        self.overlay[b,a] = color
+        # xi = self.channels[self.channels != dim]
+        # we = np.meshgrid(a, xi)[1]
+        # # print('updating', self.overlay[b, a, we].shape, self.overlay[b,a].shape, a.shape, b.shape, we.shape)
+        # self.overlay[b, a, we] = 0  # only make dim 255, other 2 color channels to 0
+        # self.overlay[b, a, 3] = 255  # only make these spots visible
         return self.overlay
 
     def _toggle_selector(self, event):
