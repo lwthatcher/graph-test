@@ -1,3 +1,4 @@
 from .selection import SelectionInterface
 from .multi import MultiModalInterface
-from . import selection, multi
+from .eval import EvaluateCutInterface
+from . import selection, multi, eval

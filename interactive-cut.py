@@ -4,7 +4,7 @@ import numpy as np
 import cv2 as cv
 from matplotlib import pyplot as plt
 from PIL import Image
-from interface import MultiModalInterface
+from interface import MultiModalInterface, EvaluateCutInterface
 
 
 def get_image(_img, path):
@@ -50,10 +50,13 @@ if __name__ == '__main__':
             cv.grabCut(img, mask, rect, bgdModel, fgdModel, args.iters, mode=cv.GC_INIT_WITH_MASK)
         # inferred masked image
         mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
-        img = img * mask2[:, :, np.newaxis]
+        img2 = img * mask2[:, :, np.newaxis]
         result_masks.append(mask2)
         # interface
-        plt.imshow(img), plt.show()
+        # plt.imshow(img), plt.show()
+        eval_interface = EvaluateCutInterface(img2, mask)
+        eval_result = eval_interface.run()
+        print('Evaluation result', eval_result)
 
     # run a second time!
     # interface = MultiModalInterface(imgs, result_masks)
