@@ -29,11 +29,9 @@ class EvaluateCutInterface:
         self.ax1.imshow(self.img)
         im = self.ax2.imshow(self.mask)
         # legend
-        values = [0, 1, 2, 3]
-        colors = [im.cmap(im.norm(value)) for value in values]
-        # create a patch (proxy artist) for every color
-        patches = [mpatches.Patch(color=colors[i], label="Level {l}".format(l=values[i])) for i in range(len(values))]
-        # put those patched as legend-handles into the legend
+        values = ['definite background', 'definite foreground', 'possible background', 'possible foreground']
+        colors = [im.cmap(im.norm(i)) for i,val in enumerate(values)]
+        patches = [mpatches.Patch(color=colors[i], label=val) for i,val in enumerate(values)]
         self.ax2.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
         # add buttons
         btn_accept = Button(self.ax3, 'Accept')
