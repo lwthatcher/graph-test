@@ -9,6 +9,7 @@ from matplotlib import path
 
 BLUE = (0, 0, 255, 255)
 RED = (255, 0, 0, 255)
+GREEN = (0, 255, 0, 200)
 
 
 class MultiModalInterface:
@@ -197,12 +198,13 @@ class MultiModalInterface:
     def _mask_to_overlay(self, mask):
         overlay = self._new_overlay()
         if mask is not None:
-            overlay[(mask==1) | (mask==3)] = (0,0,255,255)
-        # for now, don't transfer background
+            overlay[mask == 0] = RED
+            overlay[mask==1] = BLUE
+            overlay[mask==3] = GREEN
         return overlay
     # endregion
 
-    # Format Methods
+    # region Format Methods
     @staticmethod
     def format_rect(rect):
         if rect is None:
