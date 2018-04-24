@@ -1,3 +1,3 @@
 from .dataset import Dataset
 from . import osvos
-from .extras import run_parent
+from .extras import load_parent

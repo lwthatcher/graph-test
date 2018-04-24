@@ -15,6 +15,12 @@ def get_image(_img, path):
     return np.asarray(Image.open(img_path))
 
 
+def _load_mask(mask_path):
+    mask = np.asarray(Image.open(mask_path)).astype(np.uint8)
+    mask[mask == 255] = 3
+    mask[mask == 0] = 2
+    return mask
+
 def masked_img(img, mask):
     mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
     return img * mask2[:, :, np.newaxis]
@@ -71,13 +77,17 @@ if __name__ == '__main__':
     else:
         test_frames, test_imgs = extras._get_frames(args.dataset, args.idx)
         imgs = [np.asarray(Image.open(img_path)) for img_path in test_imgs]
+    # init masks and results to None
     results = [None for _ in imgs]
     masks = None
+    # run OSVOS parent (if applicable)
     if args.dataset and args.run_parent:
-        print('running parent')
-        extras.run_parent(args.dataset, args.idx)
-        print('parent done')
+        output_frames = extras.load_parent(args.dataset, args.idx)
+        print('parent frames:', output_frames)
+        masks = [_load_mask(mask_path) for mask_path in output_frames]
     # keep running until results are agreed upon
-    while not all([r=='accept' for r in results]):
-        masks = annotate(imgs, masks)
+    while not all([r == 'accept' for r in results]):
+        if not masks:
+            masks = annotate(imgs, masks)
         results = evaluate(imgs, masks)
+    # should save here
