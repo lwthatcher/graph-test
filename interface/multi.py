@@ -32,9 +32,9 @@ class MultiModalInterface:
         # specify figure
         self.fig = plt.figure(1, figsize=(24, 10))
         # setup axes
-        gs = gridspec.GridSpec(5, 3,
+        gs = gridspec.GridSpec(7, 3,
                                width_ratios=[1, 1, 8],
-                               height_ratios=[2, 1, 1, 1, 1])
+                               height_ratios=[2, 1, 2, 1, 1, 1, 1])
         self.ax_brushes = plt.subplot(gs[0, :2], facecolor=tool_color)
         self.ax_img = plt.subplot(gs[:, 2])
         self.ax_img.set_xticks([]), self.ax_img.set_yticks([])
@@ -42,7 +42,9 @@ class MultiModalInterface:
         self.ax_nav = plt.subplot(gs[2, :2], facecolor=tool_color)
         self.ax_btn1 = plt.subplot(gs[3, 0], facecolor=tool_color)
         self.ax_btn2 = plt.subplot(gs[3, 1], facecolor=tool_color)
-        self.ax_btn3 = plt.subplot(gs[4, :2], facecolor=tool_color)
+        self.ax_btn3 = plt.subplot(gs[4, 0], facecolor=tool_color)
+        self.ax_btn4 = plt.subplot(gs[4, 1], facecolor=tool_color)
+        self.ax_btn5 = plt.subplot(gs[5, :2], facecolor=tool_color)
         # additional components
         self._rects = [None for _ in imgs]
         self.toggle_selector = ToggleSelector(self._toggle_selector)
@@ -52,6 +54,8 @@ class MultiModalInterface:
         self.btn1 = Button(self.ax_btn1, 'Transfer Foreground')
         self.btn2 = Button(self.ax_btn2, 'Transfer Background')
         self.btn3 = Button(self.ax_btn3, 'Toggle Suggested')
+        self.btn4 = Button(self.ax_btn4, 'Clear Background')
+        self.btn5 = Button(self.ax_btn5, 'Submit')
         # drawing layers
         self._img = self.ax_img.imshow(self.img, zorder=0, alpha=1.)
         self._msk = self.ax_img.imshow(self.overlay, origin='upper', interpolation='nearest', zorder=3, alpha=.5)
@@ -97,7 +101,8 @@ class MultiModalInterface:
         toggle_selector.LR = LassoSelector(self.ax_img, self.on_lasso(0), lineprops=self.lpr, button=[3])
         toggle_selector.DL = LassoSelector(self.ax_img, self.on_draw(2), lineprops=self.lpl, button=[1])
         toggle_selector.DR = LassoSelector(self.ax_img, self.on_draw(0), lineprops=self.lpr, button=[3])
-        toggle_selector.ERASER = LassoSelector(self.ax_img, self.on_erase, lineprops=self.lp_eraser, button=[1, 3])
+        toggle_selector.DE = LassoSelector(self.ax_img, self.on_erase, lineprops=self.lp_eraser, button=[2])
+        toggle_selector.E = LassoSelector(self.ax_img, self.on_erase, lineprops=self.lp_eraser, button=[1, 3])
         toggle_selector.set_active('rectangle')
         # link additional call-backs
         self.radio.on_clicked(self.on_change_brush)
@@ -106,8 +111,9 @@ class MultiModalInterface:
         self.btn1.on_clicked(self._transfer_foreground)
         self.btn2.on_clicked(self._transfer_background)
         self.btn3.on_clicked(self._toggle_suggestions)
+        self.btn4.on_clicked(self._clear_background)
+        self.btn5.on_clicked(self._quit)
         # start
-
         plt.connect('key_press_event', toggle_selector)
         plt.show()
         # noinspection PyTypeChecker
@@ -251,6 +257,13 @@ class MultiModalInterface:
             self.overlay[c_greens] = GREEN
         self._msk.set_data(self.overlay)
         self.fig.canvas.draw_idle()
+
+    def _clear_background(self, event):
+        print('Clearing background!')
+
+    def _quit(self, event):
+        print('exit now!')
+        plt.close(self.fig)
     # endregion
 
     # region Format Methods
@@ -284,7 +297,7 @@ class ToggleSelector:
         self.LR = None
         self.DL = None
         self.DR = None
-        self.ERASER = None
+        self.E = None
 
     def __call__(self):
         return self.func
@@ -296,7 +309,7 @@ class ToggleSelector:
                 (self.LR, 'lasso'),
                 (self.DL, 'draw'),
                 (self.DR, 'draw'),
-                (self.ERASER, 'eraser')]
+                (self.E, 'eraser')]
 
     def set_active(self, label):
         for brush, _type in self.brushes:
