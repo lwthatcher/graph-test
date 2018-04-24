@@ -15,6 +15,7 @@ CLEAR = (255, 255, 255, 0)
 CLEAR_GREEN = (0, 255, 0, 0)
 CLEAR_YELLOW = (255, 255, 0, 0)
 
+
 class MultiModalInterface:
     # region Constructor
     def __init__(self, imgs, masks=None):
@@ -184,24 +185,45 @@ class MultiModalInterface:
         self.fig.canvas.draw_idle()
     # endregion
 
-    # region Update Methods
-    def _update_array(self, ind, dim):
-        """draws the red or blue seeds with invisible background"""
-        a, b = ind.T
-        if dim == 0:
-            color = RED
-        else:
-            color = BLUE
-        self.overlay[b,a] = color
-        return self.overlay
+    # region Buttons
+    def _transfer_foreground(self, event):
+        yellows = np.all(self.overlay==YELLOW, axis=-1)
+        print(np.sum(np.all(self.overlay==YELLOW, axis=-1)))
+        self.overlay[yellows] = BLUE
+        self._msk.set_data(self.overlay)
+        self.fig.canvas.draw_idle()
 
-    def _toggle_selector(self, event):
-        print(' Key pressed.', event.key)
-        if event.key == 'escape' and self.rect:
-            print('removing rectangle', self.rect)
-            self.rect.remove()
-            self.rect = None
-            self.fig.canvas.draw_idle()
+    def _transfer_background(self, event):
+        greens = np.all(self.overlay == GREEN, axis=-1)
+        print(np.sum(np.all(self.overlay == GREEN, axis=-1)))
+        self.overlay[greens] = RED
+        self._msk.set_data(self.overlay)
+        self.fig.canvas.draw_idle()
+
+    def _toggle_suggestions(self, event):
+        yellows = np.all(self.overlay == YELLOW, axis=-1)
+        greens = np.all(self.overlay == GREEN, axis=-1)
+        c_greens = np.all(self.overlay == CLEAR_GREEN, axis=-1)
+        c_yellows = np.all(self.overlay == CLEAR_YELLOW, axis=-1)
+        has_yg = np.sum(yellows) + np.sum(greens) > 0
+        has_hidden = np.sum(c_yellows) + np.sum(c_greens) > 0
+        if has_yg:
+            self.overlay[yellows] = CLEAR_YELLOW
+            self.overlay[greens] = CLEAR_GREEN
+        elif has_hidden:
+            self.overlay[c_yellows] = YELLOW
+            self.overlay[c_greens] = GREEN
+        self._msk.set_data(self.overlay)
+        self.fig.canvas.draw_idle()
+
+    def _clear_background(self, event):
+        reds = np.all(self.overlay == RED, axis=-1)
+        self.overlay[reds] = CLEAR
+        self._msk.set_data(self.overlay)
+        self.fig.canvas.draw_idle()
+
+    def _quit(self, event):
+        plt.close(self.fig)
     # endregion
 
     # region Helper Methods
@@ -225,45 +247,26 @@ class MultiModalInterface:
             overlay[mask==2] = GREEN
             overlay[mask==3] = YELLOW
         return overlay
+    # endregion
 
-    def _transfer_foreground(self, event):
-        yellows = np.all(self.overlay==YELLOW, axis=-1)
-        print(np.sum(np.all(self.overlay==YELLOW, axis=-1)))
-        self.overlay[yellows] = BLUE
-        self._msk.set_data(self.overlay)
-        self.fig.canvas.draw_idle()
+    # region Update Methods
+    def _update_array(self, ind, dim):
+        """draws the red or blue seeds with invisible background"""
+        a, b = ind.T
+        if dim == 0:
+            color = RED
+        else:
+            color = BLUE
+        self.overlay[b,a] = color
+        return self.overlay
 
-    def _transfer_background(self, event):
-        greens = np.all(self.overlay == GREEN, axis=-1)
-        print(np.sum(np.all(self.overlay == GREEN, axis=-1)))
-        self.overlay[greens] = RED
-        self._msk.set_data(self.overlay)
-        self.fig.canvas.draw_idle()
-
-    def _toggle_suggestions(self, event):
-        yellows = np.all(self.overlay == YELLOW, axis=-1)
-        greens = np.all(self.overlay == GREEN, axis=-1)
-        c_greens = np.all(self.overlay == CLEAR_GREEN, axis=-1)
-        c_yellows = np.all(self.overlay == CLEAR_YELLOW, axis=-1)
-        has_yg = np.sum(yellows) + np.sum(greens) > 0
-        has_hidden = np.sum(c_yellows) + np.sum(c_greens) > 0
-        print('Has yellows/greens?', has_yg, has_hidden, np.sum(yellows) + np.sum(greens),
-              np.sum(c_yellows) + np.sum(c_greens))
-        if has_yg:
-            self.overlay[yellows] = CLEAR_YELLOW
-            self.overlay[greens] = CLEAR_GREEN
-        elif has_hidden:
-            self.overlay[c_yellows] = YELLOW
-            self.overlay[c_greens] = GREEN
-        self._msk.set_data(self.overlay)
-        self.fig.canvas.draw_idle()
-
-    def _clear_background(self, event):
-        print('Clearing background!')
-
-    def _quit(self, event):
-        print('exit now!')
-        plt.close(self.fig)
+    def _toggle_selector(self, event):
+        print(' Key pressed.', event.key)
+        if event.key == 'escape' and self.rect:
+            print('removing rectangle', self.rect)
+            self.rect.remove()
+            self.rect = None
+            self.fig.canvas.draw_idle()
     # endregion
 
     # region Format Methods
