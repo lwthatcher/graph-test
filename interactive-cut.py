@@ -2,6 +2,7 @@ import os
 import argparse
 import numpy as np
 import cv2 as cv
+from osvos import extras
 from matplotlib import pyplot as plt
 from PIL import Image
 from interface import MultiModalInterface, EvaluateCutInterface
@@ -59,12 +60,23 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('images', nargs='*', default=['gymnastics.jpg'], help='the image to segment')
     parser.add_argument('-f', dest='folder', nargs='*', default=['img'], help='path list to the image folder path')
+    parser.add_argument('--dataset', '-D', help='the dataset to run')
+    parser.add_argument('--idx', nargs='+', type=int, default=[1,-1], help='the list of indices in the data set to use')
     parser.add_argument('--iters', '-i', type=int, default=5, help='the number of iterations to run grab-cut for')
+    parser.add_argument('--run-parent', '-P', action='store_true', help='whether to run the OSVOS parent first')
     args = parser.parse_args()
     # load image
-    imgs = [get_image(i, args.folder) for i in args.images]
+    if not args.dataset:
+        imgs = [get_image(i, args.folder) for i in args.images]
+    else:
+        test_frames, test_imgs = extras._get_frames(args.dataset, args.idx)
+        imgs = [np.asarray(Image.open(img_path)) for img_path in test_imgs]
     results = [None for _ in imgs]
     masks = None
+    if args.dataset and args.run_parent:
+        print('running parent')
+        extras.run_parent(args.dataset, args.idx)
+        print('parent done')
     # keep running until results are agreed upon
     while not all([r=='accept' for r in results]):
         masks = annotate(imgs, masks)

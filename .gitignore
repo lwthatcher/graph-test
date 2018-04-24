@@ -3,3 +3,4 @@
 img/segmentation.png
 img/*_segmentation.png
 */__pycache__/
+img/DAVIS/*
