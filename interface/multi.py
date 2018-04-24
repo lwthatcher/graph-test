@@ -10,8 +10,10 @@ from matplotlib import path
 BLUE = (0, 0, 255, 255)
 RED = (255, 0, 0, 255)
 GREEN = (0, 255, 0, 255)
+YELLOW = (255, 255, 0, 255)
 CLEAR = (255, 255, 255, 0)
-
+CLEAR_GREEN = (0, 255, 0, 0)
+CLEAR_YELLOW = (255, 255, 0, 0)
 
 class MultiModalInterface:
     # region Constructor
@@ -30,9 +32,9 @@ class MultiModalInterface:
         # specify figure
         self.fig = plt.figure(1, figsize=(24, 10))
         # setup axes
-        gs = gridspec.GridSpec(4, 3,
+        gs = gridspec.GridSpec(5, 3,
                                width_ratios=[1, 1, 8],
-                               height_ratios=[2, 1, 1, 1])
+                               height_ratios=[2, 1, 1, 1, 1])
         self.ax_brushes = plt.subplot(gs[0, :2], facecolor=tool_color)
         self.ax_img = plt.subplot(gs[:, 2])
         self.ax_img.set_xticks([]), self.ax_img.set_yticks([])
@@ -40,6 +42,7 @@ class MultiModalInterface:
         self.ax_nav = plt.subplot(gs[2, :2], facecolor=tool_color)
         self.ax_btn1 = plt.subplot(gs[3, 0], facecolor=tool_color)
         self.ax_btn2 = plt.subplot(gs[3, 1], facecolor=tool_color)
+        self.ax_btn3 = plt.subplot(gs[4, :2], facecolor=tool_color)
         # additional components
         self._rects = [None for _ in imgs]
         self.toggle_selector = ToggleSelector(self._toggle_selector)
@@ -47,7 +50,8 @@ class MultiModalInterface:
         self.radio = RadioButtons(self.ax_brushes, ('rectangle', 'lasso', 'draw', 'eraser'), active=0)
         self.navs = RadioButtons(self.ax_nav, [str(i) for i in range(len(imgs))], active=0)
         self.btn1 = Button(self.ax_btn1, 'Transfer Foreground')
-        self.btn2 = Button(self.ax_btn2, 'Hide Potential')
+        self.btn2 = Button(self.ax_btn2, 'Transfer Background')
+        self.btn3 = Button(self.ax_btn3, 'Toggle Suggested')
         # drawing layers
         self._img = self.ax_img.imshow(self.img, zorder=0, alpha=1.)
         self._msk = self.ax_img.imshow(self.overlay, origin='upper', interpolation='nearest', zorder=3, alpha=.5)
@@ -100,7 +104,8 @@ class MultiModalInterface:
         self.navs.on_clicked(self.on_nav)
         self.slider.on_changed(self.on_change_radius)
         self.btn1.on_clicked(self._transfer_foreground)
-        self.btn2.on_clicked(self._hide_suggestions)
+        self.btn2.on_clicked(self._transfer_background)
+        self.btn3.on_clicked(self._toggle_suggestions)
         # start
 
         plt.connect('key_press_event', toggle_selector)
@@ -211,17 +216,41 @@ class MultiModalInterface:
         if mask is not None:
             overlay[mask == 0] = RED
             overlay[mask==1] = BLUE
-            overlay[mask==3] = GREEN
+            overlay[mask==2] = GREEN
+            overlay[mask==3] = YELLOW
         return overlay
 
     def _transfer_foreground(self, event):
-        print(np.all(self.overlay==GREEN, axis=-1).shape)
-        print(np.sum(np.all(self.overlay==GREEN, axis=-1)))
-        # self.overlay[self.overlay == GREEN] = BLUE
+        yellows = np.all(self.overlay==YELLOW, axis=-1)
+        print(np.sum(np.all(self.overlay==YELLOW, axis=-1)))
+        self.overlay[yellows] = BLUE
+        self._msk.set_data(self.overlay)
+        self.fig.canvas.draw_idle()
 
-    def _hide_suggestions(self, event):
-        print((self.overlay[self.overlay == GREEN]).shape)
-        # self.overlay[self.overlay == GREEN] = CLEAR
+    def _transfer_background(self, event):
+        greens = np.all(self.overlay == GREEN, axis=-1)
+        print(np.sum(np.all(self.overlay == GREEN, axis=-1)))
+        self.overlay[greens] = RED
+        self._msk.set_data(self.overlay)
+        self.fig.canvas.draw_idle()
+
+    def _toggle_suggestions(self, event):
+        yellows = np.all(self.overlay == YELLOW, axis=-1)
+        greens = np.all(self.overlay == GREEN, axis=-1)
+        c_greens = np.all(self.overlay == CLEAR_GREEN, axis=-1)
+        c_yellows = np.all(self.overlay == CLEAR_YELLOW, axis=-1)
+        has_yg = np.sum(yellows) + np.sum(greens) > 0
+        has_hidden = np.sum(c_yellows) + np.sum(c_greens) > 0
+        print('Has yellows/greens?', has_yg, has_hidden, np.sum(yellows) + np.sum(greens),
+              np.sum(c_yellows) + np.sum(c_greens))
+        if has_yg:
+            self.overlay[yellows] = CLEAR_YELLOW
+            self.overlay[greens] = CLEAR_GREEN
+        elif has_hidden:
+            self.overlay[c_yellows] = YELLOW
+            self.overlay[c_greens] = GREEN
+        self._msk.set_data(self.overlay)
+        self.fig.canvas.draw_idle()
     # endregion
 
     # region Format Methods

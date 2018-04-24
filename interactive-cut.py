@@ -22,9 +22,6 @@ def annotate(imgs, masks=None):
     result_masks = []
     for img, (rect, mask) in results:
         has_rect, has_mask = rect is not None, 0 in np.unique(mask) or 1 in np.unique(mask)
-        print('rect', rect)
-        print('mask', np.unique(mask, return_counts=True), 0 in np.unique(mask), 1 in np.unique(mask))
-        print('has rect?', has_rect, 'has mask?', has_mask)
         # do grab-cut
         bgdModel = np.zeros((1, 65), np.float64)
         fgdModel = np.zeros((1, 65), np.float64)
