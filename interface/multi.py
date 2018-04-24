@@ -300,6 +300,7 @@ class ToggleSelector:
         self.LR = None
         self.DL = None
         self.DR = None
+        self.DE = None
         self.E = None
 
     def __call__(self):
@@ -312,6 +313,7 @@ class ToggleSelector:
                 (self.LR, 'lasso'),
                 (self.DL, 'draw'),
                 (self.DR, 'draw'),
+                (self.DE, 'draw'),
                 (self.E, 'eraser')]
 
     def set_active(self, label):
