@@ -43,11 +43,9 @@ class EvaluateCutInterface:
         return self.result
 
     def _on_accept(self, event):
-        print('Accepted!', event)
         self.result = 'accept'
         plt.close()
 
     def _on_refine(self, event):
-        print('Needs further refinement', event)
         self.result = 'refine'
         plt.close()

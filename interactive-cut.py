@@ -14,6 +14,11 @@ def get_image(_img, path):
     return np.asarray(Image.open(img_path))
 
 
+def masked_img(img, mask):
+    mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
+    return img * mask2[:, :, np.newaxis]
+
+
 def annotate(imgs, masks=None):
     interface = MultiModalInterface(imgs, masks)
     results = interface.run()
@@ -40,10 +45,14 @@ def annotate(imgs, masks=None):
     return result_masks
 
 
-def masked_img(img, mask):
-    mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
-    return img * mask2[:, :, np.newaxis]
-
+def evaluate(imgs, masks):
+    results = []
+    for img, mask in zip(imgs, masks):
+        img2 = masked_img(img, mask)
+        eval_interface = EvaluateCutInterface(img2, mask)
+        result = eval_interface.run()
+        results.append(result)
+    return results
 
 
 if __name__ == '__main__':
@@ -54,17 +63,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # load image
     imgs = [get_image(i, args.folder) for i in args.images]
-    # open interface
-    masks = annotate(imgs)
-    # evaluate results
-    img2 = masked_img(imgs[0], masks[0])
-    eval_interface = EvaluateCutInterface(img2, masks[0])
-    eval_result = eval_interface.run()
-    print('Evaluation result', eval_result)
-    # run a second time!
-    masks = annotate(imgs, masks)
-    # evaluate new results
-    img2 = masked_img(imgs[0], masks[0])
-    eval_interface = EvaluateCutInterface(img2, masks[0])
-    eval_result = eval_interface.run()
-    print('Evaluation result', eval_result)
+    results = [None for _ in imgs]
+    masks = None
+    # keep running until results are agreed upon
+    while not all([r=='accept' for r in results]):
+        masks = annotate(imgs, masks)
+        results = evaluate(imgs, masks)
