@@ -4,6 +4,7 @@ import numpy as np
 import cv2 as cv
 from osvos import extras
 from PIL import Image
+import matplotlib.pyplot as plt
 from interface import MultiModalInterface, EvaluateCutInterface
 
 
@@ -25,9 +26,14 @@ def save_results(results, output_frames):
     for result, path in zip(results, output_frames):
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
-        result = np.where((result == 2) | (result == 0), 0, 1).astype('uint8')
-        print('saving', path, result.shape, result.dtype, np.unique(result))
+        result[result == 1] = 255
+        result[result == 3] = 255
+        result[result == 2] = 0
+        print('saving', path, result.shape, result.dtype, np.unique(result, return_counts=True))
+        plt.imshow(result)
+        plt.show()
         cv.imwrite(path, result)
+
     print('saved:', [(path, os.path.exists(path)) for path in output_frames])
 
 

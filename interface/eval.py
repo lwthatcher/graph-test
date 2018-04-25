@@ -2,6 +2,8 @@ from matplotlib.widgets import Button
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
+import cv2 as cv
+from .multi import ToggleSelector
 
 
 class EvaluateCutInterface:
@@ -39,7 +41,12 @@ class EvaluateCutInterface:
         # callbacks
         btn_accept.on_clicked(self._on_accept)
         btn_refine.on_clicked(self._on_refine)
+        # listener for key-press events
+        toggle_selector = ToggleSelector(self._on_keypress)
+        # start
+        plt.connect('key_press_event', toggle_selector)
         plt.show()
+        # return result
         return self.result
 
     def _on_accept(self, event):
@@ -49,3 +56,20 @@ class EvaluateCutInterface:
     def _on_refine(self, event):
         self.result = 'refine'
         plt.close()
+
+    def _on_keypress(self, event, *args, **kwargs):
+        print(' Key pressed.', event.key)
+        if event.key == 'ctrl+s':
+            plt.savefig('figure.png', bbox_inches='tight')
+            print('saved figure: figure.png')
+        elif event.key == 'ctrl+p':
+            extent = self.ax1.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
+            plt.savefig('plot.png', bbox_inches=extent)
+            print('saved image: plot.png')
+        elif event.key == 'ctrl+m':
+            _mask = self.mask
+            _mask[_mask == 1] = 255
+            _mask[_mask == 3] = 255
+            _mask[_mask == 2] = 0
+            cv.imwrite('mask.png', _mask)
+            print('saved mask: mask.png')

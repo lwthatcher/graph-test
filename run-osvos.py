@@ -28,7 +28,7 @@ _path = os.path.join('img', 'DAVIS', 'images')
 known_sequences = next(os.walk(_path))[1]
 
 
-def run_demo(seq_name, max_training_iters=200, **kwargs):
+def run_demo(seq_name, max_training_iters=100, **kwargs):
     # User Defined parameters
     side_supervision = kwargs.get('side_supervision', 1)
 
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     # define parser
     parser = argparse.ArgumentParser('parameters for running OSVOS')
     parser.add_argument('seq_name', choices=known_sequences, help='the name of the sequence to run')
-    parser.add_argument('--epochs', '-t', dest='max_training_iters', default=200, type=int,
+    parser.add_argument('--epochs', '-t', dest='max_training_iters', default=100, type=int,
                         help='number of epochs to train for')
     parser.add_argument('--supervision', dest='side_supervision', choices=[1, 2, 3], type=int,
                         help='Level of the side outputs supervision: 1-Strong 2-Weak 3-No supervision')

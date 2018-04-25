@@ -279,6 +279,18 @@ class MultiModalInterface:
             extent = self.ax_img.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
             plt.savefig('plot.png', bbox_inches=extent)
             print('saved image: plot.png')
+        elif event.key == 'ctrl+m':
+            _overlay = self.overlay
+            yellows = np.all(_overlay == YELLOW, axis=-1)
+            greens = np.all(_overlay == GREEN, axis=-1)
+            _overlay[yellows] = BLUE
+            _overlay[greens] = RED
+            _mask = self.format_mask(_overlay, None)
+            _mask[_mask == 1] = 255
+            _mask[_mask == 3] = 255
+            _mask[_mask == 2] = 0
+            cv.imwrite('mask.png', _mask)
+            print('saved mask: mask.png')
     # endregion
 
     # region Format Methods
