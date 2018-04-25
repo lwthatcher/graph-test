@@ -1,6 +1,15 @@
+# IDEs
 .idea/
 .ipynb_checkpoints/
+
+# python
+*/__pycache__/
+
+# image results
 img/segmentation.png
 img/*_segmentation.png
-*/__pycache__/
 img/DAVIS/*
+plot.png
+overlay.png
+figure.png
+mask.png

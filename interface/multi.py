@@ -1,5 +1,6 @@
 from matplotlib.widgets import RectangleSelector, LassoSelector, RadioButtons, Slider, Button
 import numpy as np
+import cv2 as cv
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.gridspec as gridspec
@@ -63,7 +64,6 @@ class MultiModalInterface:
         # line formats
         r_axis = self.ax_img.transData.transform([[5, 0], [10, 0]])
         self._t = (r_axis[1][0] - r_axis[0][0]) / 5
-        print('AXIS COORDS', r_axis, self._t)
         self.lpl = dict(color='blue', linestyle='-', linewidth=5*self._t, alpha=0.5)
         self.lpr = dict(color='black', linestyle='-', linewidth=5*self._t, alpha=0.5)
         self.lp_eraser = dict(color='white', linestyle='-', linewidth=5*self._t, alpha=0.8)
@@ -260,13 +260,25 @@ class MultiModalInterface:
         self.overlay[b,a] = color
         return self.overlay
 
-    def _toggle_selector(self, event):
+    def _toggle_selector(self, event, *args, **kwargs):
         print(' Key pressed.', event.key)
         if event.key == 'escape' and self.rect:
             print('removing rectangle', self.rect)
             self.rect.remove()
             self.rect = None
             self.fig.canvas.draw_idle()
+        elif event.key == 't':
+            print('axis scaling factor:', self._t)
+        elif event.key == 'ctrl+o':
+            cv.imwrite('overlay.png', self.overlay)
+            print('saved overlay: overlay.png')
+        elif event.key == 'ctrl+s':
+            plt.savefig('figure.png', bbox_inches='tight')
+            print('saved figure: figure.png')
+        elif event.key == 'ctrl+p':
+            extent = self.ax_img.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
+            plt.savefig('plot.png', bbox_inches=extent)
+            print('saved image: plot.png')
     # endregion
 
     # region Format Methods
@@ -304,7 +316,7 @@ class ToggleSelector:
         self.E = None
 
     def __call__(self, *args, **kwargs):
-        return self.func
+        return self.func(*args, **kwargs)
 
     @property
     def brushes(self):
