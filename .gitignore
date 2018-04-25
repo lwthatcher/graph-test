@@ -13,3 +13,6 @@ plot.png
 overlay.png
 figure.png
 mask.png
+
+# other models
+models/*
