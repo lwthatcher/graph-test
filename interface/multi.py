@@ -280,7 +280,7 @@ class MultiModalInterface:
             plt.savefig('plot.png', bbox_inches=extent)
             print('saved image: plot.png')
         elif event.key == 'ctrl+m':
-            _overlay = self.overlay
+            _overlay = np.copy(self.overlay)
             yellows = np.all(_overlay == YELLOW, axis=-1)
             greens = np.all(_overlay == GREEN, axis=-1)
             _overlay[yellows] = BLUE

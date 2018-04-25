@@ -30,8 +30,6 @@ def save_results(results, output_frames):
         result[result == 3] = 255
         result[result == 2] = 0
         print('saving', path, result.shape, result.dtype, np.unique(result, return_counts=True))
-        plt.imshow(result)
-        plt.show()
         cv.imwrite(path, result)
 
     print('saved:', [(path, os.path.exists(path)) for path in output_frames])
