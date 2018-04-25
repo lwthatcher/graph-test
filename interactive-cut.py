@@ -3,7 +3,6 @@ import argparse
 import numpy as np
 import cv2 as cv
 from osvos import extras
-from matplotlib import pyplot as plt
 from PIL import Image
 from interface import MultiModalInterface, EvaluateCutInterface
 
@@ -15,11 +14,22 @@ def get_image(_img, path):
     return np.asarray(Image.open(img_path))
 
 
-def _load_mask(mask_path):
+def load_mask(mask_path):
     mask = np.asarray(Image.open(mask_path)).astype(np.uint8)
     mask[mask == 255] = 3
     mask[mask == 0] = 2
     return mask
+
+
+def save_results(results, output_frames):
+    for result, path in zip(results, output_frames):
+        if not os.path.exists(path):
+            os.makedirs(path)
+        result = np.where((result == 2) | (result == 0), 0, 1).astype('uint8')
+        print('saving', path, result.shape, result.dtype, np.unique(result))
+        cv.imwrite(path, result)
+    print('saved:', [(path, os.path.exists(path)) for path in output_frames])
+
 
 def masked_img(img, mask):
     mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
@@ -70,6 +80,7 @@ if __name__ == '__main__':
     parser.add_argument('--idx', nargs='+', type=int, default=[1,-1], help='the list of indices in the data set to use')
     parser.add_argument('--iters', '-i', type=int, default=5, help='the number of iterations to run grab-cut for')
     parser.add_argument('--run-parent', '-P', action='store_true', help='whether to run the OSVOS parent first')
+    parser.add_argument('--save', '-s', action='store_true', help='whether to save results')
     args = parser.parse_args()
     # load image
     if not args.dataset:
@@ -77,17 +88,22 @@ if __name__ == '__main__':
     else:
         test_frames, test_imgs = extras._get_frames(args.dataset, args.idx)
         imgs = [np.asarray(Image.open(img_path)) for img_path in test_imgs]
-    # init masks and results to None
+    # init masks, results, and outputs to None
     results = [None for _ in imgs]
     masks = None
+    output_frames = None
     # run OSVOS parent (if applicable)
     if args.dataset and args.run_parent:
-        output_frames = extras.load_parent(args.dataset, args.idx)
-        print('parent frames:', output_frames)
-        masks = [_load_mask(mask_path) for mask_path in output_frames]
+        parent_frames, output_frames = extras.load_parent(args.dataset, args.idx)
+        print('parent frames:', parent_frames)
+        masks = [load_mask(mask_path) for mask_path in parent_frames]
     # keep running until results are agreed upon
-    while not all([r == 'accept' for r in results]):
-        if not masks:
-            masks = annotate(imgs, masks)
+    if masks:
         results = evaluate(imgs, masks)
-    # should save here
+    while not all([r == 'accept' for r in results]):
+        masks = annotate(imgs, masks)
+        results = evaluate(imgs, masks)
+    # save results
+    if args.save and output_frames:
+        print('saving results', output_frames)
+        save_results(masks, output_frames)

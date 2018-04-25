@@ -303,7 +303,7 @@ class ToggleSelector:
         self.DE = None
         self.E = None
 
-    def __call__(self):
+    def __call__(self, *args, **kwargs):
         return self.func
 
     @property

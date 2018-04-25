@@ -34,6 +34,7 @@ def load_parent(seq_name, frames=None, **kwargs):
     test_frames, test_imgs = _get_frames(seq_name, frames)
     print('images:', test_imgs, 'masks:', test_frames)
     output_frames = [os.path.join('img', 'DAVIS', 'parent', seq_name, frame) for frame in test_frames]
+    train_frames = [os.path.join('img', 'DAVIS', 'train', seq_name, frame) for frame in test_frames]
     # if they don't exist, create them
     if not all([os.path.exists(frame) for frame in output_frames]):
         print('running parent')
@@ -42,4 +43,4 @@ def load_parent(seq_name, frames=None, **kwargs):
             checkpoint_path = os.path.join('models', 'OSVOS_parent', 'OSVOS_parent.ckpt-50000')
             osvos.test(dataset, checkpoint_path, result_path)
     # return output frames
-    return output_frames
+    return output_frames, train_frames
