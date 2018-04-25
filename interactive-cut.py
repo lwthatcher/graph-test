@@ -23,8 +23,8 @@ def load_mask(mask_path):
 
 def save_results(results, output_frames):
     for result, path in zip(results, output_frames):
-        if not os.path.exists(path):
-            os.makedirs(path)
+        if not os.path.exists(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
         result = np.where((result == 2) | (result == 0), 0, 1).astype('uint8')
         print('saving', path, result.shape, result.dtype, np.unique(result))
         cv.imwrite(path, result)

@@ -45,8 +45,11 @@ def run_demo(seq_name, max_training_iters=200, **kwargs):
     # Define Dataset
     test_frames = sorted(os.listdir(os.path.join('img', 'DAVIS', 'images', seq_name)))
     test_imgs = [os.path.join('img', 'DAVIS', 'images', seq_name, frame) for frame in test_frames]
+    print('test set:', test_frames)
     train_frames = sorted(os.listdir(os.path.join('img', 'DAVIS', 'train', seq_name)))
-    train_imgs = [os.path.join('img', 'DAVIS', 'train', seq_name, frame) for frame in train_frames]
+    train_imgs = [os.path.join('img', 'DAVIS', 'images', seq_name, frame[:-3]+'jpg') + ' ' +
+                  os.path.join('img', 'DAVIS', 'train', seq_name, frame) for frame in train_frames]
+    print('train set:', train_frames, train_imgs)
     dataset = Dataset(train_imgs, test_imgs, './', data_aug=True)
 
     # Train the network
