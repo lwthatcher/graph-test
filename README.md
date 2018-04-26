@@ -1,6 +1,6 @@
-# Graph-Test
-A python proof-of-concept scripts for getting a simple version of graph-cut to work.
+# Two-Shot
+A quick proof-of-concept look at combining segmentation methods such as OSVOS and Grab-Cut to enable a simple form of interactive video object segmentation.
 
 ```
-MORE COMING SOON!
+MORE INFO PENDING
 ```
